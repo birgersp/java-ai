@@ -4,13 +4,20 @@ import java.util.Random;
 
 public class Neuron {
 
-	private final double[] weights;
 	private final double beta;
+	private final double[] weights;
 
 	public Neuron(int inputs) {
 
 		this(inputs, 1);
 
+	}
+	
+	public Neuron(double... weights) {
+		
+		this.weights = weights;
+		this.beta = 1;
+		
 	}
 
 	public Neuron(int inputs, double beta) {
@@ -26,15 +33,15 @@ public class Neuron {
 
 	}
 
-	public int noOfInputs() {
+	public double[] getWeights() {
 
-		return weights.length - 1;
+		return weights;
 
 	}
 
-	private double sigmoid(double beta, double value) {
+	public int noOfInputs() {
 
-		return 1 / (1 + Math.exp(beta * -value));
+		return weights.length - 1;
 
 	}
 
@@ -49,20 +56,22 @@ public class Neuron {
 
 	}
 
+	private double sigmoid(double beta, double value) {
+
+		return 1 / (1 + Math.exp(beta * -value));
+
+	}
+
 	public void train(double[] input, double expectation, double learningRate) {
 
 		double result = recall(input);
 		if (expectation != result) {
+			
 			weights[0] -= learningRate * (result - expectation) * -1;
 			for (int i = 0; i < input.length; i++)
 				weights[i + 1] -= learningRate * (result - expectation) * input[i];
+			
 		}
-	}
-	
-	public double[] getWeights() {
-		
-		return weights;
-		
 	}
 
 }

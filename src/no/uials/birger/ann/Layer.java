@@ -4,12 +4,12 @@ public class Layer {
 
 	private final Neuron[] neurons;
 
-	public Layer(int noOfInputs, int noOfNeurons) {
+	public Layer(int inputs, int outputs) {
 
-		neurons = new Neuron[noOfNeurons];
-		for (Neuron n : neurons)
-			n = new Neuron(noOfInputs);
-
+		neurons = new Neuron[outputs];
+		for (int i = 0; i < neurons.length; i++)
+			neurons[i] = new Neuron(inputs);
+		
 	}
 
 	public double[] recall(double[] input) {
@@ -20,6 +20,12 @@ public class Layer {
 
 		return output;
 
+	}
+	
+	public Neuron[] getNeurons() {
+	
+		return neurons;
+	
 	}
 	
 }

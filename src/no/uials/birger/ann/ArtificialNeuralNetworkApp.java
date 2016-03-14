@@ -12,13 +12,28 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class ArtificialNeuralNetworkApp {
 
-	private void orTest(double rate) {
+	public static void main(String[] args) {
+
+		new ArtificialNeuralNetworkApp();
+
+	}
+
+	public ArtificialNeuralNetworkApp() {
+
+		orNeuronTest(0.25);
+
+	}
+
+	private void orNeuronTest(double rate) {
 
 		XYSeries w0 = new XYSeries("w0");
 		XYSeries w1 = new XYSeries("w1");
 		XYSeries w2 = new XYSeries("w2");
 
-		Neuron neuron = new Neuron(2);
+		Network network = new Network(new Layer(2,1));
+
+		show2DNetwork(network);
+		
 		int workouts = 0;
 		int maxWorkouts = 1000;
 		int attempts = 1000000;
@@ -35,14 +50,14 @@ public class ArtificialNeuralNetworkApp {
 
 				x[0] = Math.random() >= 0.5 ? 1 : 0;
 				x[1] = Math.random() >= 0.5 ? 1 : 0;
-				result = (neuron.recall(x) > 0.9 ? 1 : 0);
+				result = (network.recall(x)[0] > 0.9 ? 1 : 0);
 				expectation = x[0] + x[1] >= 1 ? 1 : 0;
 
 				if (result != expectation) {
 
 					pass = false;
-					neuron.train(x, expectation, rate);
-					double[] w = neuron.getWeights();
+					network.getLayers()[0].getNeurons()[0].train(x, expectation, rate);
+					double[] w = network.getLayers()[0].getNeurons()[0].getWeights();
 					w0.add(workouts, w[0]);
 					w1.add(workouts, w[1]);
 					w2.add(workouts, w[2]);
@@ -61,40 +76,34 @@ public class ArtificialNeuralNetworkApp {
 		dataset.addSeries(w0);
 		dataset.addSeries(w1);
 		dataset.addSeries(w2);
-		
+
 		JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, dataset, PlotOrientation.VERTICAL, true,
 				true, false);
 		ChartFrame frame = new ChartFrame("Learning rate: " + rate + ", pass: " + pass, chart);
 		frame.pack();
 		frame.setVisible(true);
 
-		show2DNeuron(neuron);
+		show2DNetwork(network);
 
 	}
 
-	public ArtificialNeuralNetworkApp() {
-
-		orTest(0.25);
-
-	}
-
-	public void show2DNeuron(Neuron neuron) {
+	public void show2DNetwork(Network network) {
 
 		XYSeries accepted = new XYSeries("Accepted");
 		XYSeries rejected = new XYSeries("Rejected");
 		double[] input = new double[2];
 		double output;
 
-		for (double y = 0; y <= 1.1; y += 0.05) {
-			for (double x = 0; x <= 1.1; x += 0.05) {
+		for (double y = 0; y <= 1.1; y += 0.1) {
+			for (double x = 0; x <= 1.1; x += 0.1) {
 
 				input[0] = x;
 				input[1] = y;
-				output = neuron.recall(input);
+				output = network.recall(input)[0];
 				if (output > 0.9)
 					accepted.add(x, y);
 				else
-					rejected.add(x,y);
+					rejected.add(x, y);
 
 			}
 		}
@@ -102,21 +111,15 @@ public class ArtificialNeuralNetworkApp {
 		XYSeriesCollection dataset = new XYSeriesCollection();
 		dataset.addSeries(accepted);
 		dataset.addSeries(rejected);
-		
+
 		JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, dataset);
 		chart.getXYPlot().setRenderer(new XYSplineRenderer());
 		chart.setAntiAlias(true);
 		chart.getXYPlot().getRenderer().setSeriesPaint(0, Color.GREEN);
 		chart.getXYPlot().getRenderer().setSeriesPaint(1, Color.RED);
-		ChartFrame frame = new ChartFrame("2D neuron", chart);
+		ChartFrame frame = new ChartFrame("2D network", chart);
 		frame.pack();
 		frame.setVisible(true);
-
-	}
-
-	public static void main(String[] args) {
-
-		new ArtificialNeuralNetworkApp();
 
 	}
 

@@ -17,9 +17,10 @@ public class Neuron {
 
 		Random r = new Random(System.currentTimeMillis());
 
+		double sqrtN = Math.sqrt(inputs);
 		weights = new double[inputs + 1];
 		for (int i = 0; i < weights.length; i++)
-			weights[i] = 1 / Math.sqrt(inputs) * (2 * r.nextDouble() - 1);
+			weights[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
 
 		this.beta = beta;
 
@@ -56,6 +57,12 @@ public class Neuron {
 			for (int i = 0; i < input.length; i++)
 				weights[i + 1] -= learningRate * (result - expectation) * input[i];
 		}
+	}
+	
+	public double[] getWeights() {
+		
+		return weights;
+		
 	}
 
 }

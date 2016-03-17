@@ -26,14 +26,18 @@ public class Network {
 	
 	}
 	
-	public void train(double[] input, double[] expectation, double learningRate) {
-		
-		double[][] outputs = new double[layers.length][];
-		outputs[0] = layers[0].recall(input);
-		
-		for (int i = 1; i < layers.length; i++)
-			outputs[i] = layers[i].recall(outputs[i-1]);
-		
-	}
+//	public void train(double[] input, double[] expectation, double learningRate) {
+//		
+//		// Forward run
+//		double[][] outputs = new double[layers.length][];
+//		outputs[0] = layers[0].recall(input);
+//		for (int i = 1; i < layers.length; i++)
+//			outputs[i] = layers[i].recall(outputs[i-1]);
+//
+//		// Backwards run
+//		double error = 0;
+//		for (int i = 0; i )
+//		
+//	}
 	
 }

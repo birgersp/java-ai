@@ -58,8 +58,8 @@ public class ArtificialNeuralNetworkApp {
 
 				x[0] = Math.random() >= 0.5 ? 1 : -1;
 				x[1] = Math.random() >= 0.5 ? 1 : -1;
-				result = (network.recall(x)[0] > 0.5 ? 1 : 0);
-				expectation = x[0] + x[1] >= 0 ? 1 : 0;
+				result = (network.recall(x)[0] > 0 ? 1 : -1);
+				expectation = x[0] + x[1] >= 0 ? 1 : -1;
 
 				if (result != expectation) {
 
@@ -117,7 +117,7 @@ public class ArtificialNeuralNetworkApp {
 				input[0] = x;
 				input[1] = y;
 				output = network.recall(input)[0];
-				if (output > 0.5)
+				if (output > 0)
 					accepted.add(x, y);
 				else
 					rejected.add(x, y);

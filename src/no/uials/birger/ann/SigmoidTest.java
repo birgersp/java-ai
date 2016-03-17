@@ -14,7 +14,8 @@ public class SigmoidTest {
 		XYSeries w0 = new XYSeries("1 / e^(1+(-beta * x))");
 
 		for (double i = -1; i <= 1; i += 0.01) {
-			double result = Neuron.sigmoid(30, i);
+
+			double result = Math.tanh(i*10);
 			w0.add(i, result);
 		}
 

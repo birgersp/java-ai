@@ -1,6 +1,7 @@
 package no.uials.birger.ann;
 
 import java.awt.Color;
+import java.util.function.DoubleFunction;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
@@ -30,7 +31,11 @@ public class ArtificialNeuralNetworkApp {
 		XYSeries w1 = new XYSeries("w1");
 		XYSeries w2 = new XYSeries("w2");
 
-		Network network = new Network(new Layer(2, 1, 20));
+		DoubleFunction<Double> tanh = (double x) -> Math.tanh(x);
+		DoubleFunction<Double> tanhDiff = (double x) -> 1 - Math.pow(tanh.apply(x), 2);
+		
+		Network network = new Network(
+				Layer.getRandom(tanh, 2, 1));
 
 		int workouts = 0;
 		int maxWorkouts = 50;

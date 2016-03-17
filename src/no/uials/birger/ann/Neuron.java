@@ -1,35 +1,29 @@
 package no.uials.birger.ann;
 
 import java.util.Random;
+import java.util.function.DoubleFunction;
 
 public class Neuron {
 
-	private final double beta;
-	private final double[] weights;
-
-	public Neuron(int inputs) {
-
-		this(inputs, 1);
-
-	}
-
-	public Neuron(double... weights) {
-
-		this.weights = weights;
-		this.beta = 1;
-
-	}
-
-	public Neuron(int inputs, double beta) {
+	public static Neuron getRandom(DoubleFunction<Double> f, int inputs) {
 
 		Random r = new Random(System.currentTimeMillis());
 
 		double sqrtN = Math.sqrt(inputs);
-		weights = new double[inputs + 1];
+		double[] weights = new double[inputs + 1];
 		for (int i = 0; i < weights.length; i++)
 			weights[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
+		return new Neuron(f, weights);
 
-		this.beta = beta;
+	}
+
+	private final DoubleFunction<Double> f;
+	private final double[] weights;
+
+	public Neuron(DoubleFunction<Double> f, double... weights) {
+
+		this.f = f;
+		this.weights = weights;
 
 	}
 
@@ -52,13 +46,7 @@ public class Neuron {
 			sum += weights[i + 1] * input[i];
 		}
 
-		return sigmoid(beta, sum);
-
-	}
-
-	public static double sigmoid(double beta, double value) {
-
-		return 1.0 / (1.0 + Math.exp(beta * -value));
+		return f.apply(sum);
 
 	}
 
@@ -76,6 +64,7 @@ public class Neuron {
 			}
 
 		}
+
 	}
 
 }

@@ -1,14 +1,18 @@
 package no.uials.birger.ann;
 
+import java.util.function.DoubleFunction;
+
 public class Layer {
 
 	private final Neuron[] neurons;
 
-	public Layer(int inputs, int outputs, double beta) {
-
-		neurons = new Neuron[outputs];
+	public static Layer getRandom(DoubleFunction<Double> f, int inputs, int outputs) {
+		
+		Neuron[] neurons = new Neuron[outputs];
 		for (int i = 0; i < neurons.length; i++)
-			neurons[i] = new Neuron(inputs, beta);
+			neurons[i] = Neuron.getRandom(f, inputs);
+		
+		return new Layer(neurons);
 		
 	}
 	

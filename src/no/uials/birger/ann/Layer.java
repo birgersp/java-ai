@@ -4,11 +4,17 @@ public class Layer {
 
 	private final Neuron[] neurons;
 
-	public Layer(int inputs, int outputs) {
+	public Layer(int inputs, int outputs, double beta) {
 
 		neurons = new Neuron[outputs];
 		for (int i = 0; i < neurons.length; i++)
-			neurons[i] = new Neuron(inputs);
+			neurons[i] = new Neuron(inputs, beta);
+		
+	}
+	
+	public Layer(Neuron... neurons) {
+		
+		this.neurons = neurons;
 		
 	}
 

@@ -12,12 +12,12 @@ public class Neuron {
 		this(inputs, 1);
 
 	}
-	
+
 	public Neuron(double... weights) {
-		
+
 		this.weights = weights;
 		this.beta = 1;
-		
+
 	}
 
 	public Neuron(int inputs, double beta) {
@@ -56,9 +56,9 @@ public class Neuron {
 
 	}
 
-	private double sigmoid(double beta, double value) {
+	public static double sigmoid(double beta, double value) {
 
-		return 1 / (1 + Math.exp(beta * -value));
+		return 1.0 / (1.0 + Math.exp(beta * -value));
 
 	}
 
@@ -66,11 +66,15 @@ public class Neuron {
 
 		double result = recall(input);
 		if (expectation != result) {
-			
-			weights[0] -= learningRate * (result - expectation) * -1;
-			for (int i = 0; i < input.length; i++)
-				weights[i + 1] -= learningRate * (result - expectation) * input[i];
-			
+
+			double x = -1;
+			for (int i = -1; i < input.length; i++) {
+				if (i >= 0)
+					x = input[i];
+
+				weights[i + 1] -= learningRate * (result - expectation) * x;
+			}
+
 		}
 	}
 

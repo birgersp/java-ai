@@ -119,18 +119,22 @@ public class Network {
 		// Error of outputs in layer l
 		double[] d;
 
+		// Error of outputs in layer l-1
+		double[] d_;
+
 		// Compute error of each output in last layer (l = L)
 		d = new double[target.length];
 		for (int j = 0; j < d.length; j++)
-			d[j] = 2 * (x[L-1][j] - target[j]) * (1 - Math.pow(x[L-1][j], 2));
-
+			d[j] = 2 * (x[L - 1][j] - target[j]) * (1 - Math.pow(x[L - 1][j], 2));
+		
 		// Back-propagation
 		// For each layer l
 		for (int l = L - 1; l > 0; l--) {
 
-			// Error of outputs in layer l-1
-			double[] d_ = new double[x[l - 1].length];
+			// Initialize errors of layer l-1
+			d_ = new double[x[l - 1].length];
 
+			// For each input i
 			for (int i = 0; i < x[l - 1].length; i++) {
 
 				// Compute errors of layer l-1
@@ -138,16 +142,16 @@ public class Network {
 				for (int j = 0; j < x[l].length; j++)
 					sum += neurons[l][j].getWeights()[i] * d[j];
 				d_[i] = (1 - Math.pow(x[l - 1][i], 2)) * sum;
-				
+
 				// TODO: Update weights here
-			
+
 			}
 
 			// If there are more layers
 			if (l > 1)
 				// Set error of layer accordingly
 				d = d_;
-			
+
 		}
 
 	}

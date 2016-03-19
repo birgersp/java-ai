@@ -18,12 +18,41 @@ public class ArtificialNeuralNetworkApp {
 
 	}
 
+	private static void printDoubleArray(double[] array) {
+
+		System.out.print("[ " + array[0]);
+
+		for (int index = 1; index < array.length; index++)
+			System.out.print(", " + array[index]);
+
+		System.out.println(" ]");
+
+	}
+
 	public ArtificialNeuralNetworkApp() {
 
-		Neuron neuron = new Neuron(-1, -1, 1);
-		Neuron[] layer = { neuron };
-		DoubleFunction<Double> tanh = (double x) -> Math.tanh(x);
-		Network network = new Network(tanh, layer);
+		DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
+		DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
+
+		double[] h1 = { .15, .2, .35 };
+		double[] h2 = { .25, .3, .35 };
+
+		double[] o1 = { .4, .45, .6 };
+		double[] o2 = { .5, .55, .6 };
+
+		double[][] l1 = { h1, h2 };
+		double[][] l2 = { o1, o2 };
+
+		double[][][] w = { l1, l2 };
+
+		Network network = new Network(f, fD, w);
+
+		double[] i = { .05, .1 };
+
+		double[] ideal = {0.01, 0.99};
+
+		network.train(i, ideal, 0.5);
+		
 		show2DNetwork(network);
 
 	}
@@ -35,8 +64,8 @@ public class ArtificialNeuralNetworkApp {
 		double[] input = new double[2];
 		double output;
 
-		for (double y = -1; y <= 1; y += 0.025) {
-			for (double x = -1; x <= 1; x += 0.025) {
+		for (double y = 0; y <= 1; y += 0.025) {
+			for (double x = 0; x <= 1; x += 0.025) {
 
 				input[0] = x;
 				input[1] = y;

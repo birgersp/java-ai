@@ -52,6 +52,7 @@ public class Network {
 	private final DoubleFunction<Double> fD;
 	private final double[][][] w;
 	private final int L;
+	private static final int BIAS_INPUT = 1;
 
 	public Network(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, double[][][] w) {
 
@@ -105,81 +106,119 @@ public class Network {
 	private double recallSignal(int l, int j, double[] input) {
 
 		// Compute neuron signal
-		double s = w[l][j][0] * -1;
+		double s = 0;
 
 		// For each input i
-		for (int i = 1; i < w.length; i++)
-			s += w[l][j][i] * input[i - 1];
+		for (int i = 0; i < w[l][j].length - 1; i++)
+			s += w[l][j][i] * input[i];
+
+		s += w[l][j][w[l][j].length - 1] * (double) BIAS_INPUT;
 
 		return s;
 
 	}
 
-	public void train(double[] input, double[] target, double learningRate) {
+	public double[] train(double[] input, double[] ideal, double rate) {
 
-		// Output of layer outputs: x[layer][output]
+		// Output values of layer: x[layer][output index]
 		double[][] x = new double[L][];
-		
-		// Signal of layer neruons: s[layer][output]
+
+		// Signal passed to neuron in a layer: s[layer][output index]
 		double[][] s = new double[L][];
+
+		// Partial derivative of E_total with respect to neuron output:
+		// d[neuron]
+		double[] d = new double[w[L - 1].length];
+
+		// Signals whether network output matches ideal value
+		boolean pass = true;
 
 		// Forward run
 		// Compute output of each layer
-		
-		x[0] = input;
-		for (int l = 1; l < L; l++) {
-			
+		for (int l = 0; l < L; l++) {
+
+			// Number of neurons
 			final int J = w[l].length;
-			
+
+			x[l] = new double[J];
+			s[l] = new double[J];
+
 			// For each neuron (output j)
 			for (int j = 0; j < J; j++) {
 
 				// Compute neuron signal
-				s[l][j] = recallSignal(l, j, x[l-1]);
-				
+				if (l == 0)
+					s[l][j] = recallSignal(l, j, input);
+				else
+					s[l][j] = recallSignal(l, j, x[l - 1]);
+
 				// Apply function on neuron signal
 				x[l][j] = f.apply(s[l][j]);
 
+				// For last layer
+				if (l == L - 1) {
+
+					// Compute output error
+					d[j] = -(ideal[j] - x[l][j]);
+					if (x[l][j] != ideal[j])
+						pass = false;
+
+				}
+
 			}
 		}
-			
-		// Error of outputs in layer l
-		double[] d;
 
-		// Error of outputs in layer l-1
-		double[] d_;
+		// If network output did not match ideal value
+		if (!pass) {
 
-		// Compute error of each output in last layer (l = L)
-		d = new double[target.length];
-		for (int j = 0; j < d.length; j++)
-			d[j] = 2 * (x[L - 1][j] - target[j]) * fD.apply(s[L-1][j]);
-		
-		// Back-propagation
-		// For each layer l
-		for (int l = L - 1; l > 0; l--) {
+			// Partial derivative buffer
+			double[] d_ = d;
 
-			// Initialize errors of layer l-1
-			d_ = new double[x[l - 1].length];
+			// Layer input
+			double[] x_ = null;
 
-			// For each input i
-			for (int i = 0; i < x[l - 1].length; i++) {
+			// Back-propagation
+			// For each layer l
+			for (int l = L - 1; l >= 0; l--) {
 
-				// Compute errors of layer l-1
-				double sum = 0;
-				for (int j = 0; j < x[l].length; j++) {
-					sum += w[l][j][i] * d[j];
-					w[l][j][i] -= learningRate * x[l-1][i] * d[j];
-				}
-				d_[i] = (1 - Math.pow(x[l - 1][i], 2)) * sum;
-
-			}
-
-			// If there are more layers
-			if (l > 1)
-				// Set error of layer accordingly
+				// Use sum
 				d = d_;
 
+				// If not last layer: use output from previous layer as input
+				if (l > 0) {
+					x_ = x[l - 1];
+					d_ = new double[w[l - 1].length];
+				} else
+					x_ = input;
+
+				// For each neuron j in l
+				for (int j = 0; j < w[l].length; j++) {
+
+					// For each input i in l
+					for (int i = 0; i < w[l][j].length - 1; i++) {
+
+						// Compute error with regards to weight
+						double d1 = fD.apply(s[l][j]);
+						double d2 = x_[i];
+						double error = d1 * d2 * d[j];
+
+						// Sum partial derivative of E_total with respect to
+						// neuron outputs
+						if (l > 0)
+							d_[i] += d[j] * d1 * w[l][j][i];
+
+						// Update weight
+						w[l][j][i] -= rate * error;
+
+					}
+
+				}
+
+			}
+
 		}
+
+		return x[L - 1];
 
 	}
 

@@ -32,29 +32,20 @@ public class ArtificialNeuralNetworkApp {
 
 	public ArtificialNeuralNetworkApp() {
 
-		trainOrNetwork();
+		trainXOrNetwork();
 
 	}
 
-	public void trainOrNetwork() {
-
-		XYSeries w0 = new XYSeries("w0");
-		XYSeries w1 = new XYSeries("w1");
-		XYSeries w2 = new XYSeries("w2");
+	public void trainXOrNetwork() {
 
 		DoubleFunction<Double> tanh = (double x) -> Math.tanh(x);
 		DoubleFunction<Double> tanhDiff = (double x) -> 1 - Math.pow(tanh.apply(x), 2);
 
-		Network network = Network.getRandom(tanh, tanhDiff, 2, 1);
+		Network network = Network.getRandom(tanh, tanhDiff, 2, 2, 1);
 
 		int workouts = 0;
 		int maxWorkouts = 50;
 		int attempts = 1000000;
-
-		double[] w = network.getWeights()[0][0];
-		w0.add(workouts, w[0]);
-		w1.add(workouts, w[1]);
-		w2.add(workouts, w[2]);
 
 		double[] x = new double[2];
 		double[] ideal = new double[1];
@@ -69,7 +60,8 @@ public class ArtificialNeuralNetworkApp {
 				x[0] = Math.random() >= 0.5 ? 1 : -1;
 				x[1] = Math.random() >= 0.5 ? 1 : -1;
 				result = (network.recall(x)[0] > 0 ? 1 : -1);
-				ideal[0] = x[0] + x[1] >= 0 ? 1 : -1;
+				
+				ideal[0] = x[0] + x[1] == 0 ? 1 : -1;
 
 				if (result != ideal[0]) {
 
@@ -78,35 +70,16 @@ public class ArtificialNeuralNetworkApp {
 
 					workouts++;
 
-					w = network.getWeights()[0][0];
-					w0.add(workouts, w[0]);
-					w1.add(workouts, w[1]);
-					w2.add(workouts, w[2]);
-
 				}
 
 			}
 
 		}
 
-		w = network.getWeights()[0][0];
-		w0.add(workouts + 1, w[0]);
-		w1.add(workouts + 1, w[1]);
-		w2.add(workouts + 1, w[2]);
-
 		if (pass)
 			System.out.println("It took " + workouts + " workouts to handle " + attempts + " attempts");
-
-		XYSeriesCollection dataset = new XYSeriesCollection();
-		dataset.addSeries(w0);
-		dataset.addSeries(w1);
-		dataset.addSeries(w2);
-
-		JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, dataset, PlotOrientation.VERTICAL, true,
-				true, false);
-		ChartFrame frame = new ChartFrame("pass: " + pass, chart);
-		frame.pack();
-		frame.setVisible(true);
+		else
+			System.err.println("Gave up training");
 
 		show2DNetwork(network);
 

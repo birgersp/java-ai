@@ -52,8 +52,6 @@ public class ArtificialNeuralNetworkApp {
 		double[] ideal = {0.01, 0.99};
 
 		network.train(i, ideal, 0.5);
-		
-		show2DNetwork(network);
 
 	}
 

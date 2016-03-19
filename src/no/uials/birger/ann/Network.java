@@ -133,6 +133,9 @@ public class Network {
 		// Signals whether network output matches ideal value
 		boolean pass = true;
 
+		// "Bias error": sum of errors that each layer bias connects to
+		double[] e = new double[w.length];
+
 		// Forward run
 		// Compute output of each layer
 		for (int l = 0; l < L; l++) {
@@ -142,6 +145,8 @@ public class Network {
 
 			x[l] = new double[J];
 			s[l] = new double[J];
+
+			e[l] = 0;
 
 			// For each neuron (output j)
 			for (int j = 0; j < J; j++) {
@@ -160,6 +165,7 @@ public class Network {
 
 					// Compute output error
 					d[j] = -(ideal[j] - x[l][j]);
+					e[l] += d[j];
 					if (x[l][j] != ideal[j])
 						pass = false;
 
@@ -204,13 +210,18 @@ public class Network {
 
 						// Sum partial derivative of E_total with respect to
 						// neuron outputs
-						if (l > 0)
+						if (l > 0) {
 							d_[i] += d[j] * d1 * w[l][j][i];
+							e[l - 1] += d_[i];
+						}
 
-						// Update weight
+						// Update neuron weight
 						w[l][j][i] -= rate * error;
 
 					}
+
+					// Update bias weight
+					w[l][j][w[l][j].length - 1] += e[l] * rate;
 
 				}
 

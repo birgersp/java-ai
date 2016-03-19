@@ -1,52 +1,65 @@
 package no.uials.birger.ann;
 
+import java.util.Random;
 import java.util.function.DoubleFunction;
 
 public class Network {
 
-	public static Network getRandom(DoubleFunction<Double> f, int... layerOutputs) {
+	private static double[] getRandomNeuron(int inputs) {
+
+		Random r = new Random(System.currentTimeMillis());
+
+		double sqrtN = Math.sqrt(inputs);
+		double[] w = new double[inputs + 1];
+		for (int i = 0; i < w.length; i++)
+			w[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
+
+		return w;
+
+	}
+
+	public static Network getRandom(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, int... layerOutputs) {
 
 		// Number of layers
 		int L = layerOutputs.length - 1;
 
+		// Create weights
+		double[][][] w = new double[L][][];
+
 		// Number of neurons for layer l
-		int N;
+		int J;
 
-		// Create layers
-		Neuron[][] neurons = new Neuron[L][];
-
-		// For each layer
+		// For each layer l
 		for (int l = 0; l < L; l++) {
 
+			// Compute number of outputs (neurons) in layer l
+			J = layerOutputs[l + 1];
+
 			// Create neurons
-			N = layerOutputs[l + 1];
-			neurons[l] = new Neuron[N];
+			w[l] = new double[J][];
 
-			// For each neuron
-			for (int n = 0; n < N; n++)
-
-				// Assign inputs
-				neurons[l][n] = Neuron.getRandom(layerOutputs[l]);
+			// For each output
+			for (int j = 0; j < J; j++)
+				w[l][j] = getRandomNeuron(layerOutputs[l]);
 
 		}
 
-		return new Network(f, neurons);
+		return new Network(f, fDerivative, w);
 
 	}
 
 	private final DoubleFunction<Double> f;
+	private final DoubleFunction<Double> fD;
+	private final double[][][] w;
+	private final int L;
 
-	private final Neuron[][] neurons;
-
-	public Network(DoubleFunction<Double> f, Neuron[]... neurons) {
+	public Network(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, double[][][] w) {
 
 		this.f = f;
-		this.neurons = neurons;
+		this.fD = fDerivative;
+		this.w = w;
+		this.L = w.length;
 
-	}
-
-	public Neuron[][] getNeurons() {
-		return neurons;
 	}
 
 	public double[] recall(double[] input) {
@@ -58,7 +71,7 @@ public class Network {
 		double[] y;
 
 		// For each layer l
-		for (int l = 0; l < neurons.length; l++) {
+		for (int l = 0; l < L; l++) {
 
 			y = recallLayer(l, x);
 			x = y;
@@ -71,11 +84,14 @@ public class Network {
 
 	private double[] recallLayer(int l, double[] input) {
 
+		// Number of outputs of layer l
+		final int J = w[l].length;
+
 		// Layer output
-		double[] y = new double[neurons[l].length];
+		double[] y = new double[J];
 
 		// For each neuron (output j)
-		for (int j = 0; j < neurons[l].length; j++) {
+		for (int j = 0; j < J; j++) {
 
 			// Apply function on neuron signal
 			y[j] = f.apply(recallSignal(l, j, input));
@@ -88,15 +104,12 @@ public class Network {
 
 	private double recallSignal(int l, int j, double[] input) {
 
-		// Neuron weights
-		double[] w = neurons[l][j].getWeights();
-
 		// Compute neuron signal
-		double s = w[0] * -1;
+		double s = w[l][j][0] * -1;
 
 		// For each input i
 		for (int i = 1; i < w.length; i++)
-			s += w[i] * input[i - 1];
+			s += w[l][j][i] * input[i - 1];
 
 		return s;
 
@@ -104,18 +117,32 @@ public class Network {
 
 	public void train(double[] input, double[] target, double learningRate) {
 
-		// Number of layers
-		int L = neurons.length;
-
 		// Output of layer outputs: x[layer][output]
 		double[][] x = new double[L][];
+		
+		// Signal of layer neruons: s[layer][output]
+		double[][] s = new double[L][];
 
 		// Forward run
 		// Compute output of each layer
+		
 		x[0] = input;
-		for (int l = 1; l < L; l++)
-			x[l] = recallLayer(l, x[l - 1]);
+		for (int l = 1; l < L; l++) {
+			
+			final int J = w[l].length;
+			
+			// For each neuron (output j)
+			for (int j = 0; j < J; j++) {
 
+				// Compute neuron signal
+				s[l][j] = recallSignal(l, j, x[l-1]);
+				
+				// Apply function on neuron signal
+				x[l][j] = f.apply(s[l][j]);
+
+			}
+		}
+			
 		// Error of outputs in layer l
 		double[] d;
 
@@ -125,7 +152,7 @@ public class Network {
 		// Compute error of each output in last layer (l = L)
 		d = new double[target.length];
 		for (int j = 0; j < d.length; j++)
-			d[j] = 2 * (x[L - 1][j] - target[j]) * (1 - Math.pow(x[L - 1][j], 2));
+			d[j] = 2 * (x[L - 1][j] - target[j]) * fD.apply(s[L-1][j]);
 		
 		// Back-propagation
 		// For each layer l
@@ -139,11 +166,11 @@ public class Network {
 
 				// Compute errors of layer l-1
 				double sum = 0;
-				for (int j = 0; j < x[l].length; j++)
-					sum += neurons[l][j].getWeights()[i] * d[j];
+				for (int j = 0; j < x[l].length; j++) {
+					sum += w[l][j][i] * d[j];
+					w[l][j][i] -= learningRate * x[l-1][i] * d[j];
+				}
 				d_[i] = (1 - Math.pow(x[l - 1][i], 2)) * sum;
-
-				// TODO: Update weights here
 
 			}
 

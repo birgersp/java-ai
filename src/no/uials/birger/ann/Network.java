@@ -5,24 +5,11 @@ import java.util.function.DoubleFunction;
 
 public class Network {
 
-	private static double[] getRandomNeuron(int inputs) {
-
-		Random r = new Random(System.currentTimeMillis());
-
-		double sqrtN = Math.sqrt(inputs);
-		double[] w = new double[inputs + 1];
-		for (int i = 0; i < w.length; i++)
-			w[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
-
-		return w;
-
-	}
+	private final static int DEFAULT_BIAS_INPUT = 1;
+	private final static boolean DEFAULT_TRAIN_BIAS = true;
 	
-	public double[][][] getWeights() {
-		return w;
-	}
-
-	public static Network getRandom(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, int... layerOutputs) {
+	public static Network getRandom(DoubleFunction<Double> f,
+			DoubleFunction<Double> fDerivative, int... layerOutputs) {
 
 		// Number of layers
 		int L = layerOutputs.length - 1;
@@ -52,19 +39,40 @@ public class Network {
 
 	}
 
+	private static double[] getRandomNeuron(int inputs) {
+
+		Random r = new Random(System.currentTimeMillis());
+
+		double sqrtN = Math.sqrt(inputs);
+		double[] w = new double[inputs + 1];
+		for (int i = 0; i < w.length; i++)
+			w[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
+
+		return w;
+
+	}
+
+	private int biasInput = DEFAULT_BIAS_INPUT;
 	private final DoubleFunction<Double> f;
 	private final DoubleFunction<Double> fD;
-	private final double[][][] w;
 	private final int L;
-	private static final int BIAS_INPUT = 1;
-
-	public Network(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, double[][][] w) {
+	private boolean trainBias = DEFAULT_TRAIN_BIAS;
+	private final double[][][] w;
+	
+	public Network(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative,
+			double[][][] w) {
 
 		this.f = f;
 		this.fD = fDerivative;
 		this.w = w;
 		this.L = w.length;
 
+	}
+	
+	public double[][][] getWeights() {
+		
+		return w;
+		
 	}
 
 	public double[] recall(double[] input) {
@@ -116,10 +124,22 @@ public class Network {
 		for (int i = 0; i < w[l][j].length - 1; i++)
 			s += w[l][j][i] * input[i];
 
-		s += w[l][j][w[l][j].length - 1] * (double) BIAS_INPUT;
+		s += w[l][j][w[l][j].length - 1] * (double) biasInput;
 
 		return s;
 
+	}
+
+	public void setBiasInput(int biasInput) {
+		
+		this.biasInput = biasInput;
+		
+	}
+
+	public void setTrainBias(boolean trainBias) {
+		
+		this.trainBias = trainBias;
+	
 	}
 
 	public double[] train(double[] input, double[] ideal, double rate) {
@@ -225,6 +245,7 @@ public class Network {
 					}
 
 					// Update bias weight
+					if (trainBias)
 					w[l][j][w[l][j].length - 1] += e[l] * rate;
 
 				}

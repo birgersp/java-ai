@@ -56,7 +56,7 @@ public class Network {
 	private final DoubleFunction<Double> fD;
 	private final double[][][] w;
 	private final int L;
-	private static final int BIAS_INPUT = -1;
+	private static final int BIAS_INPUT = 1;
 
 	public Network(DoubleFunction<Double> f, DoubleFunction<Double> fDerivative, double[][][] w) {
 

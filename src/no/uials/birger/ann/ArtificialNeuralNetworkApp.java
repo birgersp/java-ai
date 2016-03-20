@@ -32,22 +32,44 @@ public class ArtificialNeuralNetworkApp {
 
 	public ArtificialNeuralNetworkApp() {
 
-		trainXOrNetwork();
+		// trainXOrNetwork();
+		backpropagationExampleTest();
+
+	}
+
+	public static void backpropagationExampleTest() {
+
+		double[][][] w = { { { .15, .2, .35 }, { .25, .3, .35 } },
+				{ { .4, .45, .6 }, { .5, .55, .6 } } };
+		double[] input = { .05, .1 };
+		double[] ideal = { .01, .99 };
+
+		DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
+		DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
+
+		Network network = new Network(f, fD, w);
+
+		network.train(input, ideal, 0.5);
 
 	}
 
 	public void trainXOrNetwork() {
 
-		DoubleFunction<Double> tanh = (double x) -> Math.tanh(x);
-		DoubleFunction<Double> tanhDiff = (double x) -> 1 - Math.pow(tanh.apply(x), 2);
+		DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
+		DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 
-		Network network = Network.getRandom(tanh, tanhDiff, 2, 2, 1);
+		double max = 1;
+		double min = 0;
+		double mid = (max - min) / 2;
+
+		Network network = Network.getRandom(f, fD, 2, 1);
 
 		int workouts = 0;
 		int maxWorkouts = 50;
 		int attempts = 1000000;
 
 		double[] x = new double[2];
+		double[] y;
 		double[] ideal = new double[1];
 		double result;
 
@@ -57,11 +79,12 @@ public class ArtificialNeuralNetworkApp {
 			pass = true;
 			for (int i = 0; i < attempts && pass; i++) {
 
-				x[0] = Math.random() >= 0.5 ? 1 : -1;
-				x[1] = Math.random() >= 0.5 ? 1 : -1;
-				result = (network.recall(x)[0] > 0 ? 1 : -1);
-				
-				ideal[0] = x[0] + x[1] == 0 ? 1 : -1;
+				x[0] = Math.random() >= 0.5 ? max : min;
+				x[1] = Math.random() >= 0.5 ? max : min;
+				y = network.recall(x);
+				result = (y[0] >= mid ? max : min);
+
+				ideal[0] = x[0] + x[1] > mid ? max : min;
 
 				if (result != ideal[0]) {
 
@@ -77,7 +100,8 @@ public class ArtificialNeuralNetworkApp {
 		}
 
 		if (pass)
-			System.out.println("It took " + workouts + " workouts to handle " + attempts + " attempts");
+			System.out.println("It took " + workouts + " workouts to handle "
+					+ attempts + " attempts");
 		else
 			System.err.println("Gave up training");
 
@@ -110,7 +134,8 @@ public class ArtificialNeuralNetworkApp {
 		dataset.addSeries(accepted);
 		dataset.addSeries(rejected);
 
-		JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, dataset);
+		JFreeChart chart = ChartFactory.createScatterPlot(null, null, null,
+				dataset);
 		chart.getXYPlot().setRenderer(new XYSplineRenderer());
 		chart.setAntiAlias(true);
 		chart.getXYPlot().getRenderer().setSeriesPaint(0, Color.BLUE);

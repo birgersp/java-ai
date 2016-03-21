@@ -19,6 +19,17 @@ public class ArtificialNeuralNetworkApp {
 
 	}
 
+	private static String arrayToString(double[] array) {
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("[ " + array[0]);
+		for (int index = 1; index < array.length; index++)
+			sb.append(", " + array[index]);
+		sb.append(" ]");
+		return sb.toString();
+
+	}
+
 	private static void printDoubleArray(double[] array) {
 
 		System.out.print("[ " + array[0]);
@@ -32,7 +43,7 @@ public class ArtificialNeuralNetworkApp {
 
 	public ArtificialNeuralNetworkApp() {
 
-		// trainXOrNetwork();
+		trainingAlgorithmExample();
 		backpropagationExampleTest();
 
 	}
@@ -53,45 +64,42 @@ public class ArtificialNeuralNetworkApp {
 
 	}
 
-	public void trainXOrNetwork() {
+	public static void trainingAlgorithmExample() {
 
-		DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
-		DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
+		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
 
-		double max = 1;
-		double min = 0;
-		double mid = (max - min) / 2;
+		visualizeFunction(f, -1, 1);
 
 		Network network = Network.getRandom(f, fD, 2, 1);
+		network.setBiasInput(-1);
 
 		int workouts = 0;
 		int maxWorkouts = 50;
 		int attempts = 1000000;
 
-		double[] x = new double[2];
-		double[] y;
-		double[] ideal = new double[1];
-		double result;
-
 		boolean pass = false;
 		while (!pass && workouts <= maxWorkouts) {
 
 			pass = true;
-			for (int i = 0; i < attempts && pass; i++) {
 
-				x[0] = Math.random() >= 0.5 ? max : min;
-				x[1] = Math.random() >= 0.5 ? max : min;
-				y = network.recall(x);
-				result = (y[0] >= mid ? max : min);
+			for (int a = -1; a < 2; a += 2) {
 
-				ideal[0] = x[0] + x[1] > mid ? max : min;
+				for (int b = -1; b < 2; b += 2) {
 
-				if (result != ideal[0]) {
+					double[] x = { a, b };
+					double[] y = network.recall(x);
+					double[] ideal = { (a + b >= 0 ? 1 : -1) };
+					double result = y[0] > 0 ? 1 : -1;
 
-					pass = false;
-					network.train(x, ideal, 0.25);
+					if (result != ideal[0]) {
 
-					workouts++;
+						pass = false;
+						network.train(x, ideal, 0.25);
+
+						workouts++;
+
+					}
 
 				}
 
@@ -105,24 +113,46 @@ public class ArtificialNeuralNetworkApp {
 		else
 			System.err.println("Gave up training");
 
+		if (workouts > 3)
+			System.out.println("Stop here");
+
 		show2DNetwork(network);
 
 	}
 
-	public void show2DNetwork(Network network) {
+	public static void visualizeFunction(DoubleFunction<Double> f, double min,
+			double max) {
+
+		XYSeries w0 = new XYSeries("1 / e^(1+(-beta * x))");
+
+		for (double i = min; i <= max; i += 0.01) {
+			double result = f.apply(i);
+			w0.add(i, result);
+		}
+
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		dataset.addSeries(w0);
+
+		JFreeChart chart = ChartFactory.createXYLineChart(null, null, null,
+				dataset, PlotOrientation.VERTICAL, true, true, false);
+		ChartFrame frame = new ChartFrame("Function", chart);
+		frame.pack();
+		frame.setVisible(true);
+
+	}
+
+	public static void show2DNetwork(Network network) {
 
 		XYSeries accepted = new XYSeries("Accepted");
 		XYSeries rejected = new XYSeries("Rejected");
-		double[] input = new double[2];
-		double output;
 
 		for (double y = -1; y <= 1; y += 0.025) {
 			for (double x = -1; x <= 1; x += 0.025) {
 
-				input[0] = x;
-				input[1] = y;
-				output = network.recall(input)[0];
-				if (output > 0)
+				double[] input = { x, y };
+				double[] output = network.recall(input);
+
+				if (output[0] > 0.0)
 					accepted.add(x, y);
 				else
 					rejected.add(x, y);

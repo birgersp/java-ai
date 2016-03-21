@@ -69,8 +69,6 @@ public class ArtificialNeuralNetworkApp {
 		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
 		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
 
-		visualizeFunction(f, -1, 1);
-
 		Network network = Network.getRandom(f, fD, 2, 1);
 		network.setBiasInput(-1);
 
@@ -95,7 +93,7 @@ public class ArtificialNeuralNetworkApp {
 					if (result != ideal[0]) {
 
 						pass = false;
-						network.train(x, ideal, 0.25);
+						network.train(x, ideal, 0.5);
 
 						workouts++;
 
@@ -112,9 +110,6 @@ public class ArtificialNeuralNetworkApp {
 					+ attempts + " attempts");
 		else
 			System.err.println("Gave up training");
-
-		if (workouts > 3)
-			System.out.println("Stop here");
 
 		show2DNetwork(network);
 

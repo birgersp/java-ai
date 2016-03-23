@@ -11,6 +11,8 @@ public class Network {
 	public static Network getRandom(DoubleFunction<Double> f,
 			DoubleFunction<Double> fDerivative, int... layerOutputs) {
 
+		int seed = 0;
+
 		// Number of layers
 		int L = layerOutputs.length - 1;
 
@@ -31,7 +33,8 @@ public class Network {
 
 			// For each output
 			for (int j = 0; j < J; j++)
-				w[l][j] = getRandomNeuron(layerOutputs[l]);
+				w[l][j] = getRandomNeuron(layerOutputs[l],
+						System.currentTimeMillis() + seed++);
 
 		}
 
@@ -39,9 +42,9 @@ public class Network {
 
 	}
 
-	private static double[] getRandomNeuron(int inputs) {
+	private static double[] getRandomNeuron(int inputs, long seed) {
 
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(seed);
 
 		double sqrtN = Math.sqrt(inputs);
 		double[] w = new double[inputs + 1];
@@ -190,15 +193,15 @@ public class Network {
 				// If last layer
 				if (l == L - 1) {
 
-					// Compute bias error
-					if (trainBias)
-						e[l] += d[j];
-
 					// Compute output error
 					d[j] = -(ideal[j] - x[l][j]);
 					if (x[l][j] != ideal[j])
 						pass = false;
 
+					// Compute bias error
+					if (trainBias)
+						e[l] += d[j];
+					
 				}
 
 			}

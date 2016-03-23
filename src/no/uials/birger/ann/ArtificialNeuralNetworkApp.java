@@ -13,12 +13,6 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class ArtificialNeuralNetworkApp {
 
-	public static void main(String[] args) {
-
-		new ArtificialNeuralNetworkApp();
-
-	}
-
 	private static String arrayToString(double[] array) {
 
 		StringBuilder sb = new StringBuilder();
@@ -27,24 +21,6 @@ public class ArtificialNeuralNetworkApp {
 			sb.append(", " + array[index]);
 		sb.append(" ]");
 		return sb.toString();
-
-	}
-
-	private static void printDoubleArray(double[] array) {
-
-		System.out.print("[ " + array[0]);
-
-		for (int index = 1; index < array.length; index++)
-			System.out.print(", " + array[index]);
-
-		System.out.println(" ]");
-
-	}
-
-	public ArtificialNeuralNetworkApp() {
-
-		trainingAlgorithmExample();
-		backpropagationExampleTest();
 
 	}
 
@@ -64,75 +40,20 @@ public class ArtificialNeuralNetworkApp {
 
 	}
 
-	public static void trainingAlgorithmExample() {
+	public static void main(String[] args) {
 
-		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
-		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
-
-		Network network = Network.getRandom(f, fD, 2, 1);
-		network.setBiasInput(-1);
-
-		int workouts = 0;
-		int maxWorkouts = 50;
-		int attempts = 1000000;
-
-		boolean pass = false;
-		while (!pass && workouts <= maxWorkouts) {
-
-			pass = true;
-
-			for (int a = -1; a < 2; a += 2) {
-
-				for (int b = -1; b < 2; b += 2) {
-
-					double[] x = { a, b };
-					double[] y = network.recall(x);
-					double[] ideal = { (a + b >= 0 ? 1 : -1) };
-					double result = y[0] > 0 ? 1 : -1;
-
-					if (result != ideal[0]) {
-
-						pass = false;
-						network.train(x, ideal, 0.5);
-
-						workouts++;
-
-					}
-
-				}
-
-			}
-
-		}
-
-		if (pass)
-			System.out.println("It took " + workouts + " workouts to handle "
-					+ attempts + " attempts");
-		else
-			System.err.println("Gave up training");
-
-		show2DNetwork(network);
+		new ArtificialNeuralNetworkApp();
 
 	}
 
-	public static void visualizeFunction(DoubleFunction<Double> f, double min,
-			double max) {
+	private static void printDoubleArray(double[] array) {
 
-		XYSeries w0 = new XYSeries("1 / e^(1+(-beta * x))");
+		System.out.print("[ " + array[0]);
 
-		for (double i = min; i <= max; i += 0.01) {
-			double result = f.apply(i);
-			w0.add(i, result);
-		}
+		for (int index = 1; index < array.length; index++)
+			System.out.print(", " + array[index]);
 
-		XYSeriesCollection dataset = new XYSeriesCollection();
-		dataset.addSeries(w0);
-
-		JFreeChart chart = ChartFactory.createXYLineChart(null, null, null,
-				dataset, PlotOrientation.VERTICAL, true, true, false);
-		ChartFrame frame = new ChartFrame("Function", chart);
-		frame.pack();
-		frame.setVisible(true);
+		System.out.println(" ]");
 
 	}
 
@@ -168,6 +89,103 @@ public class ArtificialNeuralNetworkApp {
 		ChartFrame frame = new ChartFrame("2D Network", chart);
 		frame.pack();
 		frame.setVisible(true);
+
+	}
+
+	public static void trainingAlgorithmExample() {
+
+		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+
+		Network network = Network.getRandom(f, fD, 2, 2, 1);
+		network.setBiasInput(-1);
+		network.setTrainBias(true);
+
+		int workouts = 0;
+		int maxWorkouts = 500;
+
+		boolean pass = false;
+		while (!pass && workouts <= maxWorkouts) {
+
+			pass = true;
+
+			for (int a = -1; a < 2; a += 2) {
+
+				for (int b = -1; b < 2; b += 2) {
+
+					double[] x = { a, b };
+					double[] y = network.recall(x);
+					double[] ideal = { (a + b == 0 ? 1 : -1) };
+					double result = y[0] > 0 ? 1 : -1;
+
+					if (result != ideal[0]) {
+
+						pass = false;
+						network.train(x, ideal, 0.25);
+
+						workouts++;
+
+					}
+
+				}
+
+			}
+
+		}
+
+		if (pass)
+			System.out.println("It took " + workouts + " workouts to train an XOR");
+		else
+			System.err.println("Gave up training");
+
+		double[][][] w = network.getWeights();
+
+		for (int l = 0; l < w.length; l++)
+			for (int j = 0; j < w[l].length; j++)
+				System.out.println(arrayToString(w[l][j]));
+
+		show2DNetwork(network);
+
+	}
+
+	public static void visualizeFunction(DoubleFunction<Double> f, double min,
+			double max) {
+
+		XYSeries w0 = new XYSeries("1 / e^(1+(-beta * x))");
+
+		for (double i = min; i <= max; i += 0.01) {
+			double result = f.apply(i);
+			w0.add(i, result);
+		}
+
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		dataset.addSeries(w0);
+
+		JFreeChart chart = ChartFactory.createXYLineChart(null, null, null,
+				dataset, PlotOrientation.VERTICAL, true, true, false);
+		ChartFrame frame = new ChartFrame("Function", chart);
+		frame.pack();
+		frame.setVisible(true);
+
+	}
+
+	public static void customNetworkTest() {
+
+		double[][][] w = { { { 2 } } };
+
+		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+
+		Network network = new Network(f, fD, w);
+		show2DNetwork(network);
+
+	}
+
+	public ArtificialNeuralNetworkApp() {
+
+		trainingAlgorithmExample();
+		// backpropagationExampleTest();
+		// customNetworkTest();
 
 	}
 

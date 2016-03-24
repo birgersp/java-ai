@@ -1,6 +1,8 @@
 package no.uials.birger.ann;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.function.DoubleFunction;
 
 import org.jfree.chart.ChartFactory;
@@ -12,6 +14,139 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 public class ArtificialNeuralNetworkApp {
+
+	public static int attempts = 0;
+
+	public static void interactiveNetwork() {
+
+		DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+		DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+
+		Network network = Network.getRandom(f, fD, 2, 2, 1);
+		network.setBiasInput(-1);
+		network.setTrainBias(true);
+
+		double[][][] w = network.getWeights();
+		XYSeries[][][] wSeries = new XYSeries[w.length][][];
+
+		for (int l = 0; l < w.length; l++) {
+
+			wSeries[l] = new XYSeries[w[l].length][];
+			for (int j = 0; j < w[l].length; j++) {
+
+				wSeries[l][j] = new XYSeries[w[l][j].length];
+				for (int i = 0; i < w[l][j].length; i++)
+					wSeries[l][j][i] = new XYSeries("w" + (i + 1));
+
+			}
+
+		}
+
+		for (int l = 0; l < wSeries.length; l++)
+			for (int j = 0; j < wSeries[l].length; j++) {
+
+				XYSeriesCollection dataset = new XYSeriesCollection();
+
+				for (int i = 0; i < wSeries[l][j].length; i++)
+					dataset.addSeries(wSeries[l][j][i]);
+
+				JFreeChart chart = ChartFactory.createScatterPlot(null, null,
+						null, dataset);
+				chart.getXYPlot().setRenderer(new XYSplineRenderer());
+				chart.setAntiAlias(true);
+				chart.getXYPlot().getRenderer().setSeriesPaint(0, Color.BLUE);
+				chart.getXYPlot().getRenderer().setSeriesPaint(1, Color.RED);
+				ChartFrame frame = new ChartFrame(
+						"Layer: " + (l + 1) + ", Neuron: " + (j + 1), chart);
+				frame.pack();
+				frame.setVisible(true);
+
+			}
+
+		System.out.println(w[1][0][2]);
+
+		XYSeries accepted = new XYSeries("Accepted");
+		XYSeries rejected = new XYSeries("Rejected");
+
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		dataset.addSeries(accepted);
+		dataset.addSeries(rejected);
+
+		JFreeChart chart = ChartFactory.createScatterPlot(null, null, null,
+				dataset);
+		chart.getXYPlot().setRenderer(new XYSplineRenderer());
+		chart.setAntiAlias(true);
+		chart.getXYPlot().getRenderer().setSeriesPaint(0, Color.BLUE);
+		chart.getXYPlot().getRenderer().setSeriesPaint(1, Color.RED);
+		ChartFrame frame = new ChartFrame("2D Network", chart);
+
+		record(attempts++, network.getWeights(), wSeries);
+
+		frame.addKeyListener(new KeyListener() {
+
+			public void keyTyped(KeyEvent e) {
+			}
+
+			public void keyReleased(KeyEvent e) {
+			}
+
+			public void keyPressed(KeyEvent e) {
+
+				if (e.getKeyCode() != KeyEvent.VK_ENTER)
+					return;
+
+				boolean pass = true;
+				for (int a = -1; a < 2; a += 2) {
+
+					for (int b = -1; b < 2; b += 2) {
+
+						double[] x = { a, b };
+						double[] y = network.recall(x);
+						double[] ideal = { (a + b == 0 ? 1 : -1) };
+						double result = y[0] > 0 ? 1 : -1;
+
+						if (result != ideal[0]) {
+
+							pass = false;
+							network.train(x, ideal, 0.1);
+
+						}
+
+					}
+
+				}
+
+				if (pass) {
+					System.err.println("Network training completed");
+					return;
+				}
+
+				accepted.clear();
+				rejected.clear();
+
+				for (double y = -1; y <= 1; y += 0.1) {
+					for (double x = -1; x <= 1; x += 0.1) {
+
+						double[] input = { x, y };
+						double[] output = network.recall(input);
+
+						if (output[0] > 0.0)
+							accepted.add(x, y);
+						else
+							rejected.add(x, y);
+
+					}
+				}
+
+				record(attempts++, network.getWeights(), wSeries);
+
+			}
+		});
+
+		frame.pack();
+		frame.setVisible(true);
+
+	}
 
 	private static String arrayToString(double[] array) {
 
@@ -239,9 +374,10 @@ public class ArtificialNeuralNetworkApp {
 
 	public ArtificialNeuralNetworkApp() {
 
-		trainingAlgorithmExample();
+		// trainingAlgorithmExample();
 		// backpropagationExampleTest();
 		// customNetworkTest();
+		interactiveNetwork();
 
 	}
 

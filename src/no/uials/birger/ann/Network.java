@@ -5,7 +5,7 @@ import java.util.function.DoubleFunction;
 
 public class Network {
 
-	private final static int DEFAULT_BIAS_INPUT = -1;
+	private final static double DEFAULT_BIAS_INPUT = -1;
 	private final static boolean DEFAULT_TRAIN_BIAS = true;
 
 	public static Network getRandom(DoubleFunction<Double> f,
@@ -55,7 +55,7 @@ public class Network {
 
 	}
 
-	private int biasInput = DEFAULT_BIAS_INPUT;
+	private double biasInput = DEFAULT_BIAS_INPUT;
 	private final DoubleFunction<Double> f;
 	private final DoubleFunction<Double> fD;
 	private final int L;
@@ -133,7 +133,7 @@ public class Network {
 
 	}
 
-	public void setBiasInput(int biasInput) {
+	public void setBiasInput(double biasInput) {
 
 		this.biasInput = biasInput;
 

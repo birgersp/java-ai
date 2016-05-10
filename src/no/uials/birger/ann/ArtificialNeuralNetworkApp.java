@@ -24,7 +24,7 @@ public class ArtificialNeuralNetworkApp {
 
         final Network network = Network.getRandom(f, fD, 2, 6, 1);
         network.setBiasInput(-1);
-        network.setTrainBias(true);
+        network.setTrainBias(false);
 
         final XYSeries trainingSeries = new XYSeries("training");
         final XYSeries testingSeries = new XYSeries("testing");
@@ -129,10 +129,8 @@ public class ArtificialNeuralNetworkApp {
 
                         for (int i = 0; i < nTest; i++) {
 
-                            
-
                         }
-                        
+
                         double trainingError = (double) trainErrors / (double) nTrain;
                         double testingError = (double) testErrors / (double) nTest;
                         int epochs = trainingSeries.getItemCount();
@@ -183,24 +181,31 @@ public class ArtificialNeuralNetworkApp {
 
         Network network = Network.getRandom(f, fD, 2, 2, 1);
         network.setBiasInput(-1);
-        network.setTrainBias(false);
+        network.setTrainBias(true);
 
         double[][][] w = network.getWeights();
         XYSeries[][][] wSeries = new XYSeries[w.length][][];
 
+        System.out.print("[ ");
         for (int l = 0; l < w.length; l++) {
 
+            System.out.print("[ ");
             wSeries[l] = new XYSeries[w[l].length][];
             for (int j = 0; j < w[l].length; j++) {
 
+                System.out.print("[ ");
                 wSeries[l][j] = new XYSeries[w[l][j].length];
                 for (int i = 0; i < w[l][j].length; i++) {
+                    System.out.print(w[l][j][i] + " ");
                     wSeries[l][j][i] = new XYSeries("w" + (i + 1));
                 }
+                System.out.print("] ");
 
             }
+            System.out.print("] ");
 
         }
+        System.out.println("]");
 
         XYSeries accepted = new XYSeries("Accepted");
         XYSeries rejected = new XYSeries("Rejected");
@@ -338,7 +343,7 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
         DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 
-        Network network = new Network(f, fD, w);
+        Network network = new Network(f, fD, w, -1, true);
 
         network.train(input, ideal, 0.5);
 
@@ -545,7 +550,7 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
 
-        Network network = new Network(f, fD, w);
+        Network network = new Network(f, fD, w, -1, true);
         show2DNetwork(network);
 
     }
@@ -555,7 +560,7 @@ public class ArtificialNeuralNetworkApp {
         // trainingAlgorithmExample();
         // backpropagationExampleTest();
         // customNetworkTest();
-//         interactiveNetwork();
+        // interactiveNetwork();
         findFunction();
 
     }

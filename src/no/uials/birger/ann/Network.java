@@ -139,8 +139,11 @@ public class Network {
             s += w[l][j][i] * input[i];
         }
 
-        // Add bias weight times bias input
-        s += w[l][j][w[l][j].length - 1] * (double) biasInput;
+        // Number of inputs in layer
+        int I = w[l][j].length;
+
+        // Add bias weight times bias input (last input of layer)
+        s += w[l][j][I - 1] * (double) biasInput;
 
         // Return output signal
         return s;
@@ -161,17 +164,17 @@ public class Network {
 
     public double[] train(double[] input, double[] ideal, double rate) {
 
-        // Output values of layer: x[layer][output index]
-        double[][] x = new double[L][];
+        // Input values of layer: x[layer][]
+        double[][] x = new double[L + 1][];
+        x[0] = input;
 
-        // Signal passed to neuron in a layer: s[layer][output index]
-        double[][] s = new double[L][];
+        // Signal passed to neuron in a layer: s[layer][]
+        double[][] s = new double[L + 1][];
 
         // Partial derivative of E_total with respect to neuron output:
-        // d[neuron]
         double[] d = new double[w[L - 1].length];
 
-        // Signals whether network output matches ideal value
+        // Indication whether network output matches ideal value
         boolean pass = true;
 
         // "Bias error": sum of errors that each layer bias connects to
@@ -184,9 +187,11 @@ public class Network {
             // Number of neurons
             final int J = w[l].length;
 
-            // Initialize signals and output
-            x[l] = new double[J];
+            // Initialize neuron signal
             s[l] = new double[J];
+
+            // Initialize neuron output (i.e. input of next layer)
+            x[l + 1] = new double[J];
 
             // Initialize bias error
             if (trainBias) {
@@ -197,23 +202,18 @@ public class Network {
             for (int j = 0; j < J; j++) {
 
                 // Compute neuron signal
-                if (l == 0) {
-                    // In first layer, use provided input
-                    s[l][j] = recallSignal(l, j, input);
-                } else {
-                    // In rest of layers, use output of previous layer as input
-                    s[l][j] = recallSignal(l, j, x[l - 1]);
-                }
+                s[l][j] = recallSignal(l, j, x[l]);
 
-                // Apply function on neuron signal
-                x[l][j] = f.apply(s[l][j]);
+                // Compute output of neuron (i.e. input of next layer):
+                // Apply activation function on neuron signal
+                x[l + 1][j] = f.apply(s[l][j]);
 
                 // If last layer
                 if (l == L - 1) {
 
                     // Compute output error
-                    d[j] = -(ideal[j] - x[l][j]);
-                    if (x[l][j] != ideal[j]) {
+                    d[j] = -(ideal[j] - x[l + 1][j]);
+                    if (x[l + 1][j] != ideal[j]) {
                         pass = false;
                     }
 
@@ -225,49 +225,59 @@ public class Network {
                 }
 
             }
+
         }
 
         // If network output did not match ideal value
         if (!pass) {
 
-            // Partial derivative buffer
-            double[] d_ = d;
+            // Number of inputs (includig bias) in layer
+            int I;
 
-            // Layer input
-            double[] x_ = null;
+            // Number of outputs in layer
+            int J;
+
+            // Error with regards to weight of next layer (l-1)
+            double[] d_ = d;
 
             // Back-propagation
             // For each layer l
             for (int l = L - 1; l >= 0; l--) {
 
-                // Use sum
+                // Retreive error with regards to weight
                 d = d_;
 
                 // If not first layer: use output from previous layer as input
                 if (l > 0) {
-                    x_ = x[l - 1];
                     d_ = new double[w[l - 1].length];
-                } else {
-                    x_ = input;
                 }
 
+                // Retreive number of inputs (including bias) in layer
+                I = w[l][0].length;
+                
+                // Retreive number of outputs in layer
+                J = w[l].length;
+
                 // For each neuron j in l
-                for (int j = 0; j < w[l].length; j++) {
+                for (int j = 0; j < J; j++) {
 
-                    // For each input i in l
-                    for (int i = 0; i < w[l][j].length - 1; i++) {
+                    // For each input i in l (except bias input)
+                    for (int i = 0; i < I - 1; i++) {
 
-                        // Compute error with regards to weight
-                        double d1 = fD.apply(s[l][j]);
-                        double d2 = x_[i];
-                        double error = d1 * d2 * d[j];
+                        // Compute error with regards to weight:
+                        // error = d * dO_dS * d2, where
+                        // d:  Partial derivative of E_total with respect to neuron output
+                        // d1: P. d. of neuron output with regards to neuron signal
+                        // dO_dS: P. d. of neuron signal with regards to weight
+                        double dO_dS = fD.apply(s[l][j]);
+                        double error = d[j] * dO_dS * x[l][i];
 
                         // If not first layer
                         if (l > 0) {
 
                             // Sum partial derivative of E_total with respect to
                             // neuron outputs
-                            d_[i] += d[j] * d1 * w[l][j][i];
+                            d_[i] += d[j] * dO_dS * w[l][j][i];
 
                             // Compute error of previous layer
                             if (trainBias) {
@@ -283,7 +293,7 @@ public class Network {
 
                     // Update bias weight
                     if (trainBias) {
-                        w[l][j][w[l][j].length - 1] += e[l] * rate;
+                        w[l][j][I - 1] += e[l] * rate;
                     }
 
                 }

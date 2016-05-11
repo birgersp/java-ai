@@ -343,8 +343,7 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
         DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 
-        Network network = new Network(f, fD, w, -1, true);
-
+        Network network = new Network(f, fD, w, 1, false);
         network.train(input, ideal, 0.5);
 
     }
@@ -542,16 +541,40 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
 
-        int networks = 10000;
+        double[][][] badStartingWeights;
+        
+        int networks = 100000;
         int successNetworks = 0;
         int maxEpochs = 1000;
         int c = 0;
         int totalEpochs = 0;
         int highEpochs = 0;
         int lowEpochs = maxEpochs;
+
         while (c < networks) {
 
             Network network = Network.getRandom(f, fD, 2, 2, 1);
+//            network.setTrainBias(true);
+            double[][][] w = network.getWeights();
+
+            // Number of layers
+            int L = w.length;
+            badStartingWeights = new double[L][][];
+            for (int l = 0; l < L; l++) {
+
+                // Number of neurons
+                int J = w[l].length;
+                badStartingWeights[l] = new double[J][];
+                for (int j = 0; j < J; j++) {
+
+                    // Number of inputs (including bias)
+                    int I = w[l][j].length;
+                    badStartingWeights[l][j] = new double[I];
+                    System.arraycopy(w[l][j], 0, badStartingWeights[l][j], 0, I);
+
+                }
+
+            }
 
             int epochs = 0;
 
@@ -584,7 +607,7 @@ public class ArtificialNeuralNetworkApp {
             if (pass) {
                 successNetworks++;
                 totalEpochs += epochs;
-                
+
                 if (epochs > highEpochs) {
                     highEpochs = epochs;
                 }
@@ -592,7 +615,15 @@ public class ArtificialNeuralNetworkApp {
                 if (epochs < lowEpochs) {
                     lowEpochs = epochs;
                 }
-                
+
+            } else {
+
+                System.out.println("Faulty neural network weights:");
+                printNNWeights(badStartingWeights);
+                System.out.println("Trained to:");
+                printNNWeights(network.getWeights());
+                System.out.println();
+
             }
 
             c++;
@@ -604,6 +635,37 @@ public class ArtificialNeuralNetworkApp {
         System.out.println("Average epochs before successing: " + averageAttempts);
         System.out.println("Highest number of epochs before successing: " + highEpochs);
         System.out.println("Lowest number of epochs before successing: " + lowEpochs);
+
+    }
+
+    public static void printNNWeights(double[][][] w) {
+
+        int L = w.length;
+        for (int l = 0; l < L; l++) {
+
+            System.out.print("[");
+
+            int J = w[l].length;
+            for (int j = 0; j < J; j++) {
+
+                System.out.print("[");
+
+                int I = w[l][j].length;
+                for (int i = 0; i < I; i++) {
+
+                    System.out.print("\t" + w[l][j][i] + ",");
+
+                }
+
+                System.out.print("]");
+
+            }
+
+            System.out.print("] ");
+
+        }
+
+        System.out.println();
 
     }
 
@@ -628,7 +690,7 @@ public class ArtificialNeuralNetworkApp {
     public ArtificialNeuralNetworkApp() {
 
         // trainingAlgorithmExample();
-        // backpropagationExampleTest();
+//         backpropagationExampleTest();
         // customNetworkTest();
 //        interactiveNetwork();
 //        findFunction();

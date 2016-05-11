@@ -81,7 +81,7 @@ public class ArtificialNeuralNetworkApp {
                             for (double x = -2; x <= 2; x += 0.5) {
 
                                 double[] input2 = {x, y};
-                                double[] output2 = network.recall(input2);
+                                double[] output2 = network.recallAndActivate(input2);
 
                                 if (output2[0] > 0.0) {
                                     accepted.add(x, y);
@@ -103,7 +103,7 @@ public class ArtificialNeuralNetworkApp {
                         for (int i = 0; i < nTrain; i++) {
 
                             input = trainingSet[i];
-                            output = network.recall(input);
+                            output = network.recallAndActivate(input);
 
                             sin = Math.sin(input[0] * Math.PI);
 
@@ -181,7 +181,7 @@ public class ArtificialNeuralNetworkApp {
 
         Network network = Network.getRandom(f, fD, 2, 2, 1);
         network.setBiasInput(-1);
-        network.setTrainBias(true);
+        network.setTrainBias(false);
 
         double[][][] w = network.getWeights();
         XYSeries[][][] wSeries = new XYSeries[w.length][][];
@@ -232,7 +232,7 @@ public class ArtificialNeuralNetworkApp {
                         for (int b = -1; b < 2; b += 2) {
 
                             double[] x = {a, b};
-                            double[] y = network.recall(x);
+                            double[] y = network.recallAndActivate(x);
                             double[] ideal = {(a + b == 0 ? 1 : -1)};
                             double result = y[0] > 0 ? 1 : -1;
 
@@ -259,7 +259,7 @@ public class ArtificialNeuralNetworkApp {
                         for (double x = -1; x <= 1; x += 0.1) {
 
                             double[] input = {x, y};
-                            double[] output = network.recall(input);
+                            double[] output = network.recallAndActivate(input);
 
                             if (output[0] > 0.0) {
                                 accepted.add(x, y);
@@ -376,7 +376,7 @@ public class ArtificialNeuralNetworkApp {
             for (double x = -1; x <= 1; x += 0.025) {
 
                 double[] input = {x, y};
-                double[] output = network.recall(input);
+                double[] output = network.recallAndActivate(input);
 
                 if (output[0] > 0.0) {
                     accepted.add(x, y);
@@ -459,7 +459,7 @@ public class ArtificialNeuralNetworkApp {
                 for (int b = -1; b < 2; b += 2) {
 
                     double[] x = {a, b};
-                    double[] y = network.recall(x);
+                    double[] y = network.recallAndActivate(x);
                     double[] ideal = {(a + b == 0 ? 1 : -1)};
                     double result = y[0] > 0 ? 1 : -1;
 
@@ -537,6 +537,76 @@ public class ArtificialNeuralNetworkApp {
 
     }
 
+    public static void testANNSetups() {
+
+        DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+        DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+
+        int networks = 10000;
+        int successNetworks = 0;
+        int maxEpochs = 1000;
+        int c = 0;
+        int totalEpochs = 0;
+        int highEpochs = 0;
+        int lowEpochs = maxEpochs;
+        while (c < networks) {
+
+            Network network = Network.getRandom(f, fD, 2, 2, 1);
+
+            int epochs = 0;
+
+            boolean pass = false;
+            while (epochs < maxEpochs && !pass) {
+
+                pass = true;
+                for (int a = -1; a < 2; a += 2) {
+
+                    for (int b = -1; b < 2; b += 2) {
+
+                        double[] x = {a, b};
+                        double[] y = network.recallAndActivate(x);
+                        double[] ideal = {(a + b == 0 ? 1 : -1)};
+                        double result = y[0] > 0 ? 1 : -1;
+
+                        if (result != ideal[0]) {
+                            pass = false;
+                            network.train(x, ideal, 0.1);
+                        }
+
+                    }
+
+                }
+
+                epochs++;
+
+            }
+
+            if (pass) {
+                successNetworks++;
+                totalEpochs += epochs;
+                
+                if (epochs > highEpochs) {
+                    highEpochs = epochs;
+                }
+
+                if (epochs < lowEpochs) {
+                    lowEpochs = epochs;
+                }
+                
+            }
+
+            c++;
+
+        }
+
+        System.out.println(successNetworks + " of " + networks + " successful");
+        double averageAttempts = (double) totalEpochs / (double) successNetworks;
+        System.out.println("Average epochs before successing: " + averageAttempts);
+        System.out.println("Highest number of epochs before successing: " + highEpochs);
+        System.out.println("Lowest number of epochs before successing: " + lowEpochs);
+
+    }
+
     public static void customNetworkTest() {
 
         double[][][] w = {
@@ -560,9 +630,9 @@ public class ArtificialNeuralNetworkApp {
         // trainingAlgorithmExample();
         // backpropagationExampleTest();
         // customNetworkTest();
-        // interactiveNetwork();
-        findFunction();
-
+//        interactiveNetwork();
+//        findFunction();
+        testANNSetups();
     }
 
 }

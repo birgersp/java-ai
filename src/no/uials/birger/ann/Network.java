@@ -6,7 +6,7 @@ import java.util.function.DoubleFunction;
 public class Network {
 
     public final static double DEFAULT_BIAS_INPUT = -1;
-    public final static boolean DEFAULT_TRAIN_BIAS = true;
+    public final static boolean DEFAULT_TRAIN_BIAS = false;
 
     public static Network getRandom(DoubleFunction<Double> f,
             DoubleFunction<Double> fDerivative, int... layerOutputs) {
@@ -49,9 +49,10 @@ public class Network {
 
         double sqrtN = Math.sqrt(inputs);
         double[] w = new double[inputs + 1];
-        for (int i = 0; i < w.length; i++) {
+        for (int i = 0; i < inputs; i++) {
             w[i] = 1 / sqrtN * (2 * r.nextDouble() - 1);
         }
+        w[inputs] = 1 / sqrtN;
 
         return w;
 
@@ -81,59 +82,67 @@ public class Network {
         return w;
 
     }
-    
-    public double[] recall(double[] input) {
 
-        // Inputs
+    public double[] recallAndActivate(double[] input) {
+
+        // Input values
         double[] x = input;
 
-        // Outputs
-        double[] y;
+        // Neuron signal value (before activation)
+        double s;
+
+        // Output values
+        double[] y = null;
+
+        // Number of outputs
+        int J;
 
         // For each layer l
         for (int l = 0; l < L; l++) {
 
-            y = recallLayer(l, x);
+            // Number of outputs of layer l
+            J = w[l].length;
+
+            // Layer output
+            y = new double[J];
+
+            // For each neuron (output j)
+            for (int j = 0; j < J; j++) {
+
+                // Compute neuron signal
+                s = recallSignal(l, j, x);
+
+                // Apply function on neuron signal
+                y[j] = f.apply(s);
+
+            }
+
+            // Input of next layer is output of the current one
             x = y;
 
         }
 
-        return x;
-
-    }
-
-    private double[] recallLayer(int l, double[] input) {
-
-        // Number of outputs of layer l
-        final int J = w[l].length;
-
-        // Layer output
-        double[] y = new double[J];
-
-        // For each neuron (output j)
-        for (int j = 0; j < J; j++) {
-
-            // Apply function on neuron signal
-            y[j] = f.apply(recallSignal(l, j, input));
-
-        }
-
+        // Return the output
         return y;
 
     }
 
     private double recallSignal(int l, int j, double[] input) {
 
-        // Compute neuron signal
+        // Compute output signal
         double s = 0;
 
+        // Neuron signal is sum of input values multiplied with their corresponding weights
         // For each input i
         for (int i = 0; i < w[l][j].length - 1; i++) {
+            // Add weight times input value
             s += w[l][j][i] * input[i];
         }
 
+        // Add bias weight times bias input
         s += w[l][j][w[l][j].length - 1] * (double) biasInput;
 
+        // Return output signal
         return s;
 
     }
@@ -169,7 +178,7 @@ public class Network {
         double[] e = (trainBias ? new double[w.length] : null);
 
         // Forward run
-        // Compute output of each layer
+        // For each layer (l)
         for (int l = 0; l < L; l++) {
 
             // Number of neurons
@@ -184,13 +193,15 @@ public class Network {
                 e[l] = 0;
             }
 
-            // For each neuron (output j)
+            // For each neuron (j)
             for (int j = 0; j < J; j++) {
 
                 // Compute neuron signal
                 if (l == 0) {
+                    // In first layer, use provided input
                     s[l][j] = recallSignal(l, j, input);
                 } else {
+                    // In rest of layers, use output of previous layer as input
                     s[l][j] = recallSignal(l, j, x[l - 1]);
                 }
 
@@ -232,7 +243,7 @@ public class Network {
                 // Use sum
                 d = d_;
 
-                // If not last layer: use output from previous layer as input
+                // If not first layer: use output from previous layer as input
                 if (l > 0) {
                     x_ = x[l - 1];
                     d_ = new double[w[l - 1].length];

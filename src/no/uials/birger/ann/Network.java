@@ -163,12 +163,12 @@ public class Network {
 
     public double[] train(double[] input, double[] ideal, double rate) {
 
-        // Input values of layer: x[layer][]
+        // Input values of layers + output of final layer: x[layer][]
         double[][] x = new double[L + 1][];
         x[0] = input;
 
         // Signal passed to neuron in a layer: s[layer][]
-        double[][] s = new double[L + 1][];
+        double[][] s = new double[L][];
 
         // Partial derivative of E_total with respect to neuron output:
         double[] d = new double[w[L - 1].length];
@@ -223,7 +223,7 @@ public class Network {
             // Number of outputs in layer
             int J;
 
-            // Error with regards to weight of next layer (l-1)
+            // Error with regards to weight of previous layer (l-1)
             double[] d_ = d;
 
             // Back-propagation

@@ -22,15 +22,16 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(f.apply(x), 2);
 
-        final Network network = Network.getRandom(f, fD, 2, 6, 1);
-        network.setBiasInput(-1);
-        network.setTrainBias(false);
+        final Network network = Network.getRandom(f, fD, 2, 12, 1);
+//        network.setBiasInput(-1);
+//        network.setTrainBias(true);
 
         final XYSeries trainingSeries = new XYSeries("training");
         final XYSeries testingSeries = new XYSeries("testing");
 
-        XYSeries accepted = new XYSeries("Accepted");
-        XYSeries rejected = new XYSeries("Rejected");
+//        XYSeries accepted = new XYSeries("Accepted");
+//        XYSeries rejected = new XYSeries("Rejected");
+        XYSeries neuralOutput = new XYSeries("Neural network");
 
         XYSeriesCollection errorData = new XYSeriesCollection();
         errorData.addSeries(trainingSeries);
@@ -44,21 +45,21 @@ public class ArtificialNeuralNetworkApp {
         errorChart.getXYPlot().getRenderer().setSeriesPaint(1, Color.RED);
         ChartFrame errorFrame = new ChartFrame("Error rate", errorChart);
 
-        int nTrain = 500;
-        int nTest = 250;
+        int nTrain = 1000;
+        int nTest = 500;
 
         final double[][] trainingSet = new double[nTrain][];
         for (int i = 0; i < nTrain; i++) {
             trainingSet[i] = new double[2];
-            trainingSet[i][0] = (Math.random() * 2 - 1);
-            trainingSet[i][1] = (Math.random() * 2 - 1);
+            trainingSet[i][0] = (Math.random() * 2 - 1) * 4;
+            trainingSet[i][1] = (Math.random() * 2 - 1) * 4;
         }
 
         final double[][] testingSet = new double[nTest][];
         for (int i = 0; i < nTest; i++) {
             testingSet[i] = new double[2];
-            testingSet[i][0] = (Math.random() * 2 - 1);
-            testingSet[i][1] = (Math.random() * 2 - 1);
+            testingSet[i][0] = (Math.random() * 2 - 1) * 4;
+            testingSet[i][1] = (Math.random() * 2 - 1) * 4;
         }
 
         KeyListener keyListener = new KeyListener() {
@@ -75,18 +76,16 @@ public class ArtificialNeuralNetworkApp {
                     case KeyEvent.VK_ESCAPE:
                         System.exit(0);
                     case KeyEvent.VK_SPACE:
-                        accepted.clear();
-                        rejected.clear();
-                        for (double y = -2; y <= 2; y += 0.5) {
-                            for (double x = -2; x <= 2; x += 0.5) {
-
+                        neuralOutput.clear();
+                        for (double x = -2; x <= 2; x += 0.1) {
+                            for (double y = -2; y <= 2; y += 0.1) {
+                                
                                 double[] input2 = {x, y};
                                 double[] output2 = network.recallAndActivate(input2);
 
                                 if (output2[0] > 0.0) {
-                                    accepted.add(x, y);
-                                } else {
-                                    rejected.add(x, y);
+                                    neuralOutput.add(x,y);
+                                    break;
                                 }
 
                             }
@@ -123,11 +122,32 @@ public class ArtificialNeuralNetworkApp {
 
                             }
 
-                            network.train(input, target, 0.05);
+                            network.train(input, target, 0.01);
 
                         }
-
+                        
                         for (int i = 0; i < nTest; i++) {
+
+                            input = testingSet[i];
+                            output = network.recallAndActivate(input);
+
+                            sin = Math.sin(input[0] * Math.PI);
+
+                            if (input[1] < sin) { // 0
+
+                                target[0] = -1;
+                                if (output[0] > 0) {
+                                    testErrors++;
+                                }
+
+                            } else { // 1
+
+                                target[0] = 1;
+                                if (output[0] <= 0) {
+                                    testErrors++;
+                                }
+
+                            }
 
                         }
 
@@ -149,8 +169,9 @@ public class ArtificialNeuralNetworkApp {
         errorFrame.setVisible(true);
 
         XYSeriesCollection dataset = new XYSeriesCollection();
-        dataset.addSeries(accepted);
-        dataset.addSeries(rejected);
+        dataset.addSeries(neuralOutput);
+//        dataset.addSeries(accepted);
+//        dataset.addSeries(rejected);
 
         XYSeries sine = new XYSeries("Sine");
         double y;
@@ -596,7 +617,7 @@ public class ArtificialNeuralNetworkApp {
 
         int successNetworks = 0;
         int maxEpochs = 10000;
-        int N = 1000;
+        int N = 100;
         int totalEpochs = 0;
         int highEpochs = 0;
         int lowEpochs = maxEpochs;
@@ -771,25 +792,21 @@ public class ArtificialNeuralNetworkApp {
         // backpropagationExampleTest();
         // customNetworkTest();
 //        interactiveNetwork();
-        // findFunction();
-        testANNSetups();
+        findFunction();
+//        testANNSetups();
 //
-//        DoubleFunction<Double> f = (double x) -> Math.tanh(x);
-//        DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+//        DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
+//        DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 //
-//        double[][][] w = {{{0, 0.2}}};
+//        double[][][] w = {{{0.15, 0.2, 0.35}, {0.25, 0.3, 0.35}}, {{0.4, 0.45, 0.6}, {0.5, 0.55, 0.6}}};
 //
-//        Network n = new Network(f, fD, w, -1, true);
+//        Network n = new Network(f, fD, w, 1, true);
 //
-//        double[] x = new double[1];
-//        double[] y = new double[1];
-//        
-//        x[0] = 5;
-//        y[0] = -1;
-//        n.train(x, y, 0.25);
-//        
-//        printNNWeights(n.getWeights());
-//        
+//        double[] x = {0.05, 0.1};
+//        double[] y = {0.01, 0.99};
+//
+//        n.train(x, y, 0.5);
+//
 //        System.out.println(n.recallAndActivate(x)[0]);
 
     }

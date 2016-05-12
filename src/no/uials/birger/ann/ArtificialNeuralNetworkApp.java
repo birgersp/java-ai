@@ -1,6 +1,5 @@
 package no.uials.birger.ann;
 
-import com.sun.xml.internal.bind.v2.runtime.output.SAXOutput;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -565,6 +564,28 @@ public class ArtificialNeuralNetworkApp {
 
     }
 
+    public static double[][][] copy(double[][][] x) {
+
+        int I1 = x.length;
+        double[][][] y = new double[I1][][];
+        for (int i1 = 0; i1 < I1; i1++) {
+
+            int I2 = x[i1].length;
+            y[i1] = new double[I2][];
+            for (int i2 = 0; i2 < I2; i2++) {
+
+                int I3 = x[i1][i2].length;
+                y[i1][i2] = new double[I3];
+                System.arraycopy(x[i1][i2], 0, y[i1][i2], 0, I3);
+
+            }
+
+        }
+
+        return y;
+
+    }
+
     public static void testANNSetups() {
 
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
@@ -574,8 +595,8 @@ public class ArtificialNeuralNetworkApp {
 //        DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 
         int successNetworks = 0;
-        int maxEpochs = 100000;
-        int N = 100;
+        int maxEpochs = 10000;
+        int N = 1000;
         int totalEpochs = 0;
         int highEpochs = 0;
         int lowEpochs = maxEpochs;
@@ -583,56 +604,52 @@ public class ArtificialNeuralNetworkApp {
         double[][][][] startingWeights = new double[N][][][];
         boolean[] failed = new boolean[N];
 
+        double[] trainingRates = {0.05, 0.01};
+
         int n = 0;
         while (n < N) {
 
             Network network = Network.getRandom(f, fD, 2, 2, 1);
             network.setTrainBias(true);
-            double[][][] w = network.getWeights();
 
-            // Number of layers
-            int L = w.length;
-            startingWeights[n] = new double[L][][];
-            for (int l = 0; l < L; l++) {
-
-                // Number of neurons
-                int J = w[l].length;
-                startingWeights[n][l] = new double[J][];
-                for (int j = 0; j < J; j++) {
-
-                    // Number of inputs (including bias)
-                    int I = w[l][j].length;
-                    startingWeights[n][l][j] = new double[I];
-                    System.arraycopy(w[l][j], 0, startingWeights[n][l][j], 0, I);
-
-                }
-
-            }
+            startingWeights[n] = copy(network.getWeights());
 
             int epochs = 0;
             boolean pass = false;
-            while (epochs < maxEpochs && !pass) {
+            double trainingRate;
 
-                pass = true;
-                for (int a = -1; a < 2; a += 2) {
+            int rateIndex = 0;
+            while (rateIndex < trainingRates.length && !pass) {
 
-                    for (int b = -1; b < 2; b += 2) {
+                trainingRate = trainingRates[rateIndex];
 
-                        double[] x = {a, b};
-                        double[] y = network.recallAndActivate(x);
-                        double[] ideal = {(a + b == 0 ? 1 : -1)};
-                        double result = y[0] > 0 ? 1 : -1;
+                epochs = 0;
+                while (epochs < maxEpochs && !pass) {
 
-                        if (result != ideal[0]) {
-                            pass = false;
-                            network.train(x, ideal, 0.01);
+                    pass = true;
+                    for (int a = -1; a < 2; a += 2) {
+
+                        for (int b = -1; b < 2; b += 2) {
+
+                            double[] x = {a, b};
+                            double[] y = network.recallAndActivate(x);
+                            double[] ideal = {(a + b == 0 ? 1 : -1)};
+                            double result = y[0] > 0 ? 1 : -1;
+
+                            if (result != ideal[0]) {
+                                pass = false;
+                                network.train(x, ideal, trainingRate);
+                            }
+
                         }
 
                     }
 
+                    epochs++;
+
                 }
 
-                epochs++;
+                rateIndex++;
 
             }
 
@@ -667,15 +684,14 @@ public class ArtificialNeuralNetworkApp {
             }
         }
 
+//        System.out.println();
+//        System.out.println("Successful starting weights:");
+//        for (int i = 0; i < N; i++) {
+//            if (!failed[i]) {
+//                print3DDoubleArray(startingWeights[i]);
+//            }
+//        }
         System.out.println();
-        System.out.println("Successful starting weights:");
-        for (int i = 0; i < N; i++) {
-            if (!failed[i]) {
-                print3DDoubleArray(startingWeights[i]);
-            }
-        }
-
-        System.out.println();        
         System.out.println(successNetworks + " of " + N + " successful");
         double averageAttempts = (double) totalEpochs / (double) successNetworks;
         System.out.println("Average epochs before successing: " + averageAttempts);

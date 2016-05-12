@@ -1,5 +1,6 @@
 package no.uials.birger.ann;
 
+import com.sun.xml.internal.bind.v2.runtime.output.SAXOutput;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -179,11 +180,13 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
 
-        Network network = Network.getRandom(f, fD, 2, 2, 1);
+        double[][][] w = {{{0.64, 0.53, 0.53}, {-0.37, 0.64, 0.59}}, {{-0.49, 0.31, -0.27}}};
+
+        Network network = new Network(f, fD, w, -1, true);
         network.setBiasInput(-1);
         network.setTrainBias(false);
 
-        double[][][] w = network.getWeights();
+//        double[][][] w = network.getWeights();
         XYSeries[][][] wSeries = new XYSeries[w.length][][];
 
         System.out.print("[ ");
@@ -239,7 +242,7 @@ public class ArtificialNeuralNetworkApp {
                             if (result != ideal[0]) {
 
                                 pass = false;
-                                network.train(x, ideal, 0.1);
+                                network.train(x, ideal, 0.01);
 
                             }
 
@@ -402,6 +405,32 @@ public class ArtificialNeuralNetworkApp {
 
     }
 
+    public static void show1DNetwork(Network network) {
+
+        XYSeries outputSeries = new XYSeries("Output");
+
+        for (double x = -1; x <= 1; x += 0.025) {
+
+            double[] input = {x};
+            double[] output = network.recallAndActivate(input);
+            outputSeries.add(x, output[0]);
+
+        }
+
+        XYSeriesCollection dataset = new XYSeriesCollection();
+        dataset.addSeries(outputSeries);
+
+        JFreeChart chart = ChartFactory.createScatterPlot(null, null, null,
+                dataset);
+        chart.getXYPlot().setRenderer(new XYSplineRenderer());
+        chart.setAntiAlias(true);
+        chart.getXYPlot().getRenderer().setSeriesPaint(0, Color.BLACK);
+        ChartFrame frame = new ChartFrame("1D Network", chart);
+        frame.pack();
+        frame.setVisible(true);
+
+    }
+
     public static void record(double x, double[][][] w,
             XYSeries[][][] wSeries) {
 
@@ -540,44 +569,47 @@ public class ArtificialNeuralNetworkApp {
 
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+//
+//        DoubleFunction<Double> f = (double x) -> 1 / (1 + Math.exp(-x));
+//        DoubleFunction<Double> fD = (double x) -> f.apply(x) * (1 - f.apply(x));
 
-        double[][][] badStartingWeights;
-        
-        int networks = 100000;
         int successNetworks = 0;
-        int maxEpochs = 1000;
-        int c = 0;
+        int maxEpochs = 100000;
+        int N = 100;
         int totalEpochs = 0;
         int highEpochs = 0;
         int lowEpochs = maxEpochs;
 
-        while (c < networks) {
+        double[][][][] startingWeights = new double[N][][][];
+        boolean[] failed = new boolean[N];
+
+        int n = 0;
+        while (n < N) {
 
             Network network = Network.getRandom(f, fD, 2, 2, 1);
-//            network.setTrainBias(true);
+            network.setTrainBias(true);
             double[][][] w = network.getWeights();
 
             // Number of layers
             int L = w.length;
-            badStartingWeights = new double[L][][];
+            startingWeights[n] = new double[L][][];
             for (int l = 0; l < L; l++) {
 
                 // Number of neurons
                 int J = w[l].length;
-                badStartingWeights[l] = new double[J][];
+                startingWeights[n][l] = new double[J][];
                 for (int j = 0; j < J; j++) {
 
                     // Number of inputs (including bias)
                     int I = w[l][j].length;
-                    badStartingWeights[l][j] = new double[I];
-                    System.arraycopy(w[l][j], 0, badStartingWeights[l][j], 0, I);
+                    startingWeights[n][l][j] = new double[I];
+                    System.arraycopy(w[l][j], 0, startingWeights[n][l][j], 0, I);
 
                 }
 
             }
 
             int epochs = 0;
-
             boolean pass = false;
             while (epochs < maxEpochs && !pass) {
 
@@ -593,7 +625,7 @@ public class ArtificialNeuralNetworkApp {
 
                         if (result != ideal[0]) {
                             pass = false;
-                            network.train(x, ideal, 0.1);
+                            network.train(x, ideal, 0.01);
                         }
 
                     }
@@ -616,21 +648,35 @@ public class ArtificialNeuralNetworkApp {
                     lowEpochs = epochs;
                 }
 
+                failed[n] = false;
+
             } else {
 
-                System.out.println("Faulty neural network weights:");
-                printNNWeights(badStartingWeights);
-                System.out.println("Trained to:");
-                printNNWeights(network.getWeights());
-                System.out.println();
+                failed[n] = true;
 
             }
 
-            c++;
+            n++;
 
         }
 
-        System.out.println(successNetworks + " of " + networks + " successful");
+        System.out.println("Failed starting weights:");
+        for (int i = 0; i < N; i++) {
+            if (failed[i]) {
+                print3DDoubleArray(startingWeights[i]);
+            }
+        }
+
+        System.out.println();
+        System.out.println("Successful starting weights:");
+        for (int i = 0; i < N; i++) {
+            if (!failed[i]) {
+                print3DDoubleArray(startingWeights[i]);
+            }
+        }
+
+        System.out.println();        
+        System.out.println(successNetworks + " of " + N + " successful");
         double averageAttempts = (double) totalEpochs / (double) successNetworks;
         System.out.println("Average epochs before successing: " + averageAttempts);
         System.out.println("Highest number of epochs before successing: " + highEpochs);
@@ -638,7 +684,10 @@ public class ArtificialNeuralNetworkApp {
 
     }
 
-    public static void printNNWeights(double[][][] w) {
+    public static void print3DDoubleArray(double[][][] w) {
+
+        System.out.print("[");
+        int decimals = 2;
 
         int L = w.length;
         for (int l = 0; l < L; l++) {
@@ -653,19 +702,32 @@ public class ArtificialNeuralNetworkApp {
                 int I = w[l][j].length;
                 for (int i = 0; i < I; i++) {
 
-                    System.out.print("\t" + w[l][j][i] + ",");
+                    double w0 = w[l][j][i];
+                    System.out.print("\t" + (double) (Math.round(w0 * Math.pow(10, decimals)) / Math.pow(10, decimals)));
+
+                    if (i != I - 1) {
+                        System.out.print(",");
+                    }
 
                 }
 
                 System.out.print("]");
 
+                if (j != J - 1) {
+                    System.out.print(",");
+                }
+
             }
 
-            System.out.print("] ");
+            System.out.print("]");
+
+            if (l != L - 1) {
+                System.out.print(",");
+            }
 
         }
 
-        System.out.println();
+        System.out.println("]");
 
     }
 
@@ -690,11 +752,30 @@ public class ArtificialNeuralNetworkApp {
     public ArtificialNeuralNetworkApp() {
 
         // trainingAlgorithmExample();
-//         backpropagationExampleTest();
+        // backpropagationExampleTest();
         // customNetworkTest();
 //        interactiveNetwork();
-//        findFunction();
+        // findFunction();
         testANNSetups();
+//
+//        DoubleFunction<Double> f = (double x) -> Math.tanh(x);
+//        DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(Math.tanh(x), 2);
+//
+//        double[][][] w = {{{0, 0.2}}};
+//
+//        Network n = new Network(f, fD, w, -1, true);
+//
+//        double[] x = new double[1];
+//        double[] y = new double[1];
+//        
+//        x[0] = 5;
+//        y[0] = -1;
+//        n.train(x, y, 0.25);
+//        
+//        printNNWeights(n.getWeights());
+//        
+//        System.out.println(n.recallAndActivate(x)[0]);
+
     }
 
 }

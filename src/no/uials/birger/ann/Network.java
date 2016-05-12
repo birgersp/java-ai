@@ -6,7 +6,7 @@ import java.util.function.DoubleFunction;
 public class Network {
 
     public final static double DEFAULT_BIAS_INPUT = -1;
-    public final static boolean DEFAULT_TRAIN_BIAS = false;
+    public final static boolean DEFAULT_TRAIN_BIAS = true;
 
     public static Network getRandom(DoubleFunction<Double> f,
             DoubleFunction<Double> fDerivative, int... layerOutputs) {
@@ -51,13 +51,11 @@ public class Network {
         double range = max - min;
         
         Random r = new Random(seed);
-
         double sqrtN = Math.sqrt(inputs);
         double[] w = new double[inputs + 1];
-        for (int i = 0; i < inputs; i++) {
+        for (int i = 0; i <= inputs; i++) {
             w[i] = 1 / sqrtN * (range * r.nextDouble() + min);
         }
-        w[inputs] = 1 / sqrtN * range + min;
 
         return w;
 
@@ -182,9 +180,6 @@ public class Network {
         // Indication whether network output matches ideal value
         boolean pass = true;
 
-        // Sum of neuron errors (d) in a layer: e[layer]
-        double[] e = (trainBias ? new double[w.length] : null);
-
         // Forward run
         // For each layer (l)
         for (int l = 0; l < L; l++) {
@@ -197,11 +192,6 @@ public class Network {
 
             // Initialize neuron output (i.e. input of next layer)
             x[l + 1] = new double[J];
-
-            // Initialize bias error
-            if (trainBias) {
-                e[l] = 0;
-            }
 
             // For each neuron (j)
             for (int j = 0; j < J; j++) {
@@ -220,11 +210,6 @@ public class Network {
                     d[j] = (x[l + 1][j] - ideal[j]);
                     if (x[l + 1][j] != ideal[j]) {
                         pass = false;
-                    }
-
-                    // Add to layer error
-                    if (trainBias) {
-                        e[l] += d[j];
                     }
 
                 }
@@ -265,6 +250,8 @@ public class Network {
 
                 // For each neuron j in layer l
                 for (int j = 0; j < J; j++) {
+                    
+                    double dO_dS = fD.apply(s[l][j]);
 
                     // For each input i in l (except bias input)
                     for (int i = 0; i < I - 1; i++) {
@@ -274,7 +261,6 @@ public class Network {
                         // d:  Partial derivative of E_total with respect to neuron output
                         // dO_dS: P. d. of neuron output with regards to neuron signal
                         // d2: P. d. of neuron signal with regards to weight (i.e. neuron output)
-                        double dO_dS = fD.apply(s[l][j]);
                         double error = d[j] * dO_dS * x[l][i];
 
                         // If not first layer
@@ -283,11 +269,6 @@ public class Network {
                             // Sum partial derivative of E_total with respect to
                             // neuron outputs
                             d_[i] += d[j] * dO_dS * w[l][j][i];
-
-                            // Compute error of previous layer
-                            if (trainBias) {
-                                e[l - 1] += d_[i];
-                            }
 
                         }
 
@@ -298,7 +279,7 @@ public class Network {
 
                     // Update bias weight
                     if (trainBias) {
-                        double biasError = e[l] * biasInput;
+                        double biasError = d[j] * dO_dS * biasInput;
                         w[l][j][I - 1] -= rate * biasError;
                     }
 

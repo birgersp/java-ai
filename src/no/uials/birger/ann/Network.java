@@ -163,23 +163,34 @@ public class Network {
 
     public double[] train(double[] input, double[] ideal, double rate) {
 
+        // "w" represents a three-dimensional array holding the input weights
+        // "L" is stored as number of layers
+        
+        // Neuron signals
         double[][] s = new double[L][];
+        // Neuron output
         double[][] x = new double[L][];
+        // Partial derivative of weight error with regards to signal
         double[][] d = new double[L][];
 
+        // For each layer
         for (int l = 0; l < L; l++) {
-            
+
+            // Number of neurons in layer
             final int J = w[l].length;
 
-            s[l] = new double[J];            
+            s[l] = new double[J];
             x[l] = new double[J];
             d[l] = new double[J];
-            
+
+            // For each neuron
             for (int j = 0; j < J; j++) {
-                
+
+                // Compute output
                 s[l][j] = recallSignal(l, j, l == 0 ? input : x[l - 1]);
                 x[l][j] = f.apply(s[l][j]);
 
+                // If last layer, compute output error
                 if (l == L - 1) {
                     d[l][j] = x[l][j] - ideal[j];
                 }
@@ -188,20 +199,30 @@ public class Network {
 
         }
 
+        // For each layer (backwards)
         for (int l = L - 1; l >= 0; l--) {
 
+            // Number of neurons in layer
             final int J = w[l].length;
+
+            // For each layer
             for (int j = 0; j < J; j++) {
 
+                // Number of inputs in layer
                 final int I = w[l][j].length;
+
+                // For each input
                 for (int i = 0; i < I; i++) {
 
+                    // If not first layer, compute error in l-1
                     if (l > 0 && i < I - 1) {
                         d[l - 1][i] += d[l][j] * w[l][j][i] * fD.apply(s[l - 1][i]);
                     }
 
-                    double x_ = (i == I - 1 ? biasInput : (l == 0 ? input[i] : x[l - 1][i]));
-                    w[l][j][i] -= rate * x_ * d[l][j];
+                    // Update weight
+                    w[l][j][i] -= rate * (i == I - 1
+                            ? biasInput // Use bias input on bias weight
+                            : (l == 0 ? input[i] : x[l - 1][i])) * d[l][j];
 
                 }
 
@@ -209,6 +230,7 @@ public class Network {
 
         }
 
+        // Return output of last layer
         return x[L - 1];
 
     }

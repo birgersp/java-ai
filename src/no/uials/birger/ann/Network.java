@@ -163,121 +163,45 @@ public class Network {
 
     public double[] train(double[] input, double[] ideal, double rate) {
 
-        // Input values of layers + output of final layer: x[layer][]
-        double[][] x = new double[L + 1][];
-        x[0] = input;
-
-        // Signal passed to neuron in a layer: s[layer][]
         double[][] s = new double[L][];
+        double[][] x = new double[L][];
+        double[][] d = new double[L][];
 
-        // Partial derivative of E_total with respect to neuron output:
-        double[] d = new double[w[L - 1].length];
-
-        // Indication whether network output matches ideal value
-        boolean pass = true;
-
-        // Forward run
-        // For each layer (l)
         for (int l = 0; l < L; l++) {
-
-            // Number of neurons
+            
             final int J = w[l].length;
 
-            // Initialize neuron signal
-            s[l] = new double[J];
-
-            // Initialize neuron output (i.e. input of next layer)
-            x[l + 1] = new double[J];
-
-            // For each neuron (j)
+            s[l] = new double[J];            
+            x[l] = new double[J];
+            d[l] = new double[J];
+            
             for (int j = 0; j < J; j++) {
+                
+                s[l][j] = recallSignal(l, j, l == 0 ? input : x[l - 1]);
+                x[l][j] = f.apply(s[l][j]);
 
-                // Compute neuron signal
-                s[l][j] = recallSignal(l, j, x[l]);
-
-                // Compute output of neuron (i.e. input of next layer):
-                // Apply activation function on neuron signal
-                x[l + 1][j] = f.apply(s[l][j]);
-
-                // If last layer, compare output with target (compute error)
                 if (l == L - 1) {
-
-                    // Compute neuron output error
-                    d[j] = (x[l + 1][j] - ideal[j]);
-                    if (x[l + 1][j] != ideal[j]) {
-                        pass = false;
-                    }
-
+                    d[l][j] = x[l][j] - ideal[j];
                 }
 
             }
 
         }
 
-        // If network output did not match ideal value
-        if (!pass) {
+        for (int l = L - 1; l >= 0; l--) {
 
-            // Number of inputs (includig bias) in layer
-            int I;
+            final int J = w[l].length;
+            for (int j = 0; j < J; j++) {
 
-            // Number of outputs in layer
-            int J;
+                final int I = w[l][j].length;
+                for (int i = 0; i < I; i++) {
 
-            // Error with regards to weight of previous layer (l-1)
-            double[] d_ = d;
-
-            // Back-propagation
-            // For each layer l
-            for (int l = L - 1; l >= 0; l--) {
-
-                // Retreive error with regards to weight
-                d = d_;
-
-                // If not first layer: use output from previous layer as input
-                if (l > 0) {
-                    d_ = new double[w[l - 1].length];
-                }
-
-                // Retreive number of inputs (including bias) in layer
-                I = w[l][0].length;
-
-                // Retreive number of outputs in layer
-                J = w[l].length;
-
-                // For each neuron j in layer l
-                for (int j = 0; j < J; j++) {
-
-                    double dO_dS = fD.apply(s[l][j]);
-
-                    // For each input i in l (except bias input)
-                    for (int i = 0; i < I - 1; i++) {
-
-                        // Compute error with regards to weight:
-                        // error = d * dO_dS * d2, where
-                        // d:  Partial derivative of E_total with respect to neuron output
-                        // dO_dS: P. d. of neuron output with regards to neuron signal
-                        // d2: P. d. of neuron signal with regards to weight (i.e. neuron output)
-                        double error = d[j] * dO_dS * x[l][i];
-
-                        // If not first layer
-                        if (l > 0) {
-
-                            // Sum partial derivative of E_total with respect to
-                            // neuron outputs
-                            d_[i] += d[j] * dO_dS * w[l][j][i];
-
-                        }
-
-                        // Update weight
-                        w[l][j][i] -= rate * error;
-
+                    if (l > 0 && i < I - 1) {
+                        d[l - 1][i] += d[l][j] * w[l][j][i] * fD.apply(s[l - 1][i]);
                     }
 
-                    // Update bias weight
-                    if (trainBias) {
-                        double biasError = d[j] * dO_dS * biasInput;
-                        w[l][j][I - 1] -= rate * biasError;
-                    }
+                    double x_ = (i == I - 1 ? biasInput : (l == 0 ? input[i] : x[l - 1][i]));
+                    w[l][j][i] -= rate * x_ * d[l][j];
 
                 }
 

@@ -22,7 +22,7 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> f = (double x) -> Math.tanh(x);
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(f.apply(x), 2);
 
-        final Network network = Network.getRandom(f, fD, 2, 12, 1);
+        final Network network = Network.getRandom(f, fD, 2, 2, 1);
 
         final XYSeries trainingSeries = new XYSeries("training");
         final XYSeries testingSeries = new XYSeries("testing");
@@ -47,18 +47,22 @@ public class ArtificialNeuralNetworkApp {
         int nTest = 500;
         final double[] trainingRate = {0.01};
 
+        double range = 1;
+
+        final DoubleFunction<Double> targetFunction = (double x) -> Math.sin((x - 0.5) * Math.PI);
+
         final double[][] trainingSet = new double[nTrain][];
         for (int i = 0; i < nTrain; i++) {
             trainingSet[i] = new double[2];
-            trainingSet[i][0] = (Math.random() * 2 - 1) * 4;
-            trainingSet[i][1] = (Math.random() * 2 - 1) * 4;
+            trainingSet[i][0] = (Math.random() * 2 - 1) * range;
+            trainingSet[i][1] = (Math.random() * 2 - 1) * range;
         }
 
         final double[][] testingSet = new double[nTest][];
         for (int i = 0; i < nTest; i++) {
             testingSet[i] = new double[2];
-            testingSet[i][0] = (Math.random() * 2 - 1) * 4;
-            testingSet[i][1] = (Math.random() * 2 - 1) * 4;
+            testingSet[i][0] = (Math.random() * 2 - 1) * range;
+            testingSet[i][1] = (Math.random() * 2 - 1) * range;
         }
 
         KeyListener keyListener = new KeyListener() {
@@ -90,9 +94,10 @@ public class ArtificialNeuralNetworkApp {
                     case KeyEvent.VK_ESCAPE:
                         System.exit(0);
                     case KeyEvent.VK_SPACE:
+                        print3DDoubleArray(network.getWeights());
                         neuralOutput.clear();
-                        for (double x = -2; x <= 2; x += 0.05) {
-                            for (double y = -2; y <= 2; y += 0.05) {
+                        for (double x = -range; x <= range; x += 0.05) {
+                            for (double y = -range; y <= range; y += 0.05) {
 
                                 double[] input2 = {x, y};
                                 double[] output2 = network.recallAndActivate(input2);
@@ -112,15 +117,12 @@ public class ArtificialNeuralNetworkApp {
                         double[] input = null;
                         double[] output = null;
                         double[] target = new double[1];
-                        double sin;
                         for (int i = 0; i < nTrain; i++) {
 
                             input = trainingSet[i];
                             output = network.recallAndActivate(input);
 
-                            sin = Math.sin(input[0] * Math.PI);
-
-                            if (input[1] < sin) { // 0
+                            if (input[1] < targetFunction.apply(input[0])) { // 0
 
                                 target[0] = -1;
                                 if (output[0] > 0) {
@@ -145,9 +147,7 @@ public class ArtificialNeuralNetworkApp {
                             input = testingSet[i];
                             output = network.recallAndActivate(input);
 
-                            sin = Math.sin(input[0] * Math.PI);
-
-                            if (input[1] < sin) { // 0
+                            if (input[1] < targetFunction.apply(input[0])) { // 0
 
                                 target[0] = -1;
                                 if (output[0] > 0) {
@@ -189,8 +189,8 @@ public class ArtificialNeuralNetworkApp {
 
         XYSeries sine = new XYSeries("Sine");
         double y;
-        for (double x = -2; x <= 2; x += 0.2) {
-            y = Math.sin(x * Math.PI);
+        for (double x = -range; x <= range; x += 0.1) {
+            y = targetFunction.apply(x);
             sine.add(x, y);
         }
         dataset.addSeries(sine);

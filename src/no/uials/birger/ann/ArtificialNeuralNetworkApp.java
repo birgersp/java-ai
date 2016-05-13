@@ -23,8 +23,6 @@ public class ArtificialNeuralNetworkApp {
         DoubleFunction<Double> fD = (double x) -> 1 - Math.pow(f.apply(x), 2);
 
         final Network network = Network.getRandom(f, fD, 2, 12, 1);
-//        network.setBiasInput(-1);
-//        network.setTrainBias(true);
 
         final XYSeries trainingSeries = new XYSeries("training");
         final XYSeries testingSeries = new XYSeries("testing");
@@ -47,6 +45,7 @@ public class ArtificialNeuralNetworkApp {
 
         int nTrain = 1000;
         int nTest = 500;
+        final double[] trainingRate = {0.01};
 
         final double[][] trainingSet = new double[nTrain][];
         for (int i = 0; i < nTrain; i++) {
@@ -73,18 +72,33 @@ public class ArtificialNeuralNetworkApp {
             public void keyPressed(KeyEvent e) {
 
                 switch (e.getKeyCode()) {
+                    case KeyEvent.VK_1:
+                        trainingRate[0] = 0.001;
+                        break;
+                    case KeyEvent.VK_2:
+                        trainingRate[0] = 0.005;
+                        break;
+                    case KeyEvent.VK_3:
+                        trainingRate[0] = 0.01;
+                        break;
+                    case KeyEvent.VK_4:
+                        trainingRate[0] = 0.05;
+                        break;
+                    case KeyEvent.VK_5:
+                        trainingRate[0] = 0.1;
+                        break;
                     case KeyEvent.VK_ESCAPE:
                         System.exit(0);
                     case KeyEvent.VK_SPACE:
                         neuralOutput.clear();
-                        for (double x = -2; x <= 2; x += 0.1) {
-                            for (double y = -2; y <= 2; y += 0.1) {
-                                
+                        for (double x = -2; x <= 2; x += 0.05) {
+                            for (double y = -2; y <= 2; y += 0.05) {
+
                                 double[] input2 = {x, y};
                                 double[] output2 = network.recallAndActivate(input2);
 
                                 if (output2[0] > 0.0) {
-                                    neuralOutput.add(x,y);
+                                    neuralOutput.add(x, y);
                                     break;
                                 }
 
@@ -122,10 +136,10 @@ public class ArtificialNeuralNetworkApp {
 
                             }
 
-                            network.train(input, target, 0.01);
+                            network.train(input, target, trainingRate[0]);
 
                         }
-                        
+
                         for (int i = 0; i < nTest; i++) {
 
                             input = testingSet[i];

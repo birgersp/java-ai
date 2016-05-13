@@ -160,7 +160,15 @@ public class Network {
         this.trainBias = trainBias;
 
     }
-
+    
+    /**
+     * Trains (by adjusting the weights of) the neural network.
+     * 
+     * @param input Input values
+     * @param ideal Target output values
+     * @param rate Training rate
+     * @return The output of the network
+     */
     public double[] train(double[] input, double[] ideal, double rate) {
 
         // "w" represents a three-dimensional array holding the input weights
@@ -186,7 +194,7 @@ public class Network {
             // For each neuron
             for (int j = 0; j < J; j++) {
 
-                // Compute output
+                // Compute neuron output
                 s[l][j] = recallSignal(l, j, l == 0 ? input : x[l - 1]);
                 x[l][j] = f.apply(s[l][j]);
 

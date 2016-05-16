@@ -27,8 +27,6 @@ public class ArtificialNeuralNetworkApp {
         final XYSeries trainingSeries = new XYSeries("training");
         final XYSeries testingSeries = new XYSeries("testing");
 
-//        XYSeries accepted = new XYSeries("Accepted");
-//        XYSeries rejected = new XYSeries("Rejected");
         XYSeries neuralOutput = new XYSeries("Neural network");
 
         XYSeriesCollection errorData = new XYSeriesCollection();
@@ -134,7 +132,7 @@ public class ArtificialNeuralNetworkApp {
         while (true) {
 
             try {
-                Thread.sleep(50);
+                Thread.sleep(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;

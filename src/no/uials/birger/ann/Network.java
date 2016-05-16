@@ -178,7 +178,7 @@ public class Network {
         double[][] s = new double[L][];
         // Neuron output
         double[][] x = new double[L][];
-        // Partial derivative of weight error with regards to signal
+        // Partial derivative of weight error with regards to signal (aka. "delta")
         double[][] d = new double[L][];
 
         // For each layer
@@ -194,13 +194,13 @@ public class Network {
             // For each neuron
             for (int j = 0; j < J; j++) {
 
-                // Compute neuron output
+                // Compute neuron signal and output
                 s[l][j] = recallSignal(l, j, l == 0 ? input : x[l - 1]);
                 x[l][j] = f.apply(s[l][j]);
 
-                // If last layer, compute output error
+                // If last layer, compute neuron "delta"
                 if (l == L - 1) {
-                    d[l][j] = x[l][j] - ideal[j];
+                    d[l][j] = 2*(x[l][j]-ideal[j]) * fD.apply(s[l][j]);
                 }
 
             }

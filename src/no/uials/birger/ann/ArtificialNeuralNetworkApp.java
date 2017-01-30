@@ -121,9 +121,9 @@ public class ArtificialNeuralNetworkApp {
         chart.getXYPlot().getRenderer().setSeriesPaint(2, Color.BLACK);
         chart.getXYPlot().getRangeAxis().setAutoRange(false);
         ChartFrame frame = new ChartFrame("2D Network", chart);
-        
+
         chart.setAntiAlias(true);
-        
+
         frame.addKeyListener(keyListener);
         frame.pack();
         frame.setVisible(true);
@@ -215,7 +215,7 @@ public class ArtificialNeuralNetworkApp {
                 trainingSeries.add(epochs, trainingError);
                 testingSeries.add(epochs, testingError);
             }
-            
+
             epochs++;
         }
 

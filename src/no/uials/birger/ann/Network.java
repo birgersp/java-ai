@@ -160,10 +160,10 @@ public class Network {
         this.trainBias = trainBias;
 
     }
-    
+
     /**
      * Trains (by adjusting the weights of) the neural network.
-     * 
+     *
      * @param input Input values
      * @param ideal Target output values
      * @param rate Training rate
@@ -173,7 +173,6 @@ public class Network {
 
         // "w" represents a three-dimensional array holding the input weights
         // "L" is stored as number of layers
-        
         // Neuron signals
         double[][] s = new double[L][];
         // Neuron output
@@ -200,7 +199,7 @@ public class Network {
 
                 // If last layer, compute neuron "delta"
                 if (l == L - 1) {
-                    d[l][j] = 2*(x[l][j]-ideal[j]) * fD.apply(s[l][j]);
+                    d[l][j] = 2 * (x[l][j] - ideal[j]) * fD.apply(s[l][j]);
                 }
 
             }

@@ -1,4 +1,4 @@
-package no.uials.birger.ann;
+package no.birgersp.ann;
 
 import java.util.Random;
 import java.util.function.DoubleFunction;

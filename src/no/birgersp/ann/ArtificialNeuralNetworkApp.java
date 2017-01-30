@@ -1,4 +1,4 @@
-package no.uials.birger.ann;
+package no.birgersp.ann;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;

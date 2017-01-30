@@ -57,10 +57,10 @@ public class Network {
 
     }
 
+    private final int L;
     private double biasInput;
     private final DoubleFunction<Double> f;
     private final DoubleFunction<Double> fD;
-    private final int L;
     private boolean trainBias;
     private final double[][][] w;
 
